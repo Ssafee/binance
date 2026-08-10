@@ -1,0 +1,34 @@
+{
+    "autoEnabled": true,
+    "serverAuto": false,
+    "rules": {
+        "buyDrop": 0.1,
+        "feePct": 0.1,
+        "netProfitPct": 0.3,
+        "buyUsdt": 6
+    },
+    "items": [
+        {
+            "symbol": "ETHUSDT",
+            "basePrice": 1932.0100000000002,
+            "holding": true,
+            "addedAt": 1786109668531,
+            "lastSignal": "BUY",
+            "lastActionAt": null,
+            "lastError": null
+        },
+        {
+            "symbol": "BTCUSDT",
+            "basePrice": 65229.38999999999,
+            "holding": true,
+            "addedAt": 1786104748133,
+            "lastSignal": "BUY",
+            "lastActionAt": null,
+            "lastError": null
+        }
+    ],
+    "lastRunAt": null,
+    "lastRunOk": null,
+    "lastRunLog": [],
+    "updatedAt": 1786361682176
+}

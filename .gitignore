@@ -1,6 +1,10 @@
 .env
 .env.local
-/data/
+
+# Keep runtime data local, but ship current watchlist for deploy
+/data/*
+!/data/.htaccess
+!/data/watch_state.json
 
 .zip
 *.zip
