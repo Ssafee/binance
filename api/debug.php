@@ -38,4 +38,21 @@ try {
     $checks['watch_error'] = $e->getMessage();
 }
 
+// This is the IP Binance actually sees when this server calls its API —
+// whitelist THIS one on the Binance API key, not your local/browser IP.
+$checks['outbound_ip'] = null;
+if (function_exists('curl_init')) {
+    $ch = curl_init('https://api.ipify.org?format=text');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 8,
+        CURLOPT_CONNECTTIMEOUT => 5,
+    ]);
+    $ip = curl_exec($ch);
+    if (is_string($ip) && $ip !== '' && curl_errno($ch) === 0) {
+        $checks['outbound_ip'] = trim($ip);
+    }
+    curl_close($ch);
+}
+
 echo json_encode(['ok' => true, 'checks' => $checks], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
