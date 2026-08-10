@@ -6,6 +6,17 @@ require_once __DIR__ . '/history_store.php';
 require_once __DIR__ . '/watch_store.php';
 
 /**
+ * When false, the cron/auto engine will never open new positions —
+ * it only manages (sells) symbols that are already marked `holding`.
+ * Set CRON_AUTO_BUY=0 in .env to enable "sell-only" mode.
+ */
+function cronAutoBuyEnabled(): bool
+{
+    $raw = strtolower(trim((string) env('CRON_AUTO_BUY', '1')));
+    return !in_array($raw, ['0', 'false', 'no', 'off', ''], true);
+}
+
+/**
  * @param array<string, mixed> $rules
  * @return array{breakevenPct:float,sellTriggerPct:float}
  */
@@ -155,6 +166,7 @@ function runServerAutoPass(array $opts = []): array
         $buyDrop = (float) $rules['buyDrop'];
         $buyUsdt = (float) $rules['buyUsdt'];
         $sellTrigger = (float) $sell['sellTriggerPct'];
+        $autoBuyEnabled = cronAutoBuyEnabled();
 
         $usdtFree = 0.0;
         try {
@@ -192,6 +204,17 @@ function runServerAutoPass(array $opts = []): array
             $holding = !empty($item['holding']);
 
             if (!$holding) {
+                if (!$autoBuyEnabled) {
+                    $item['lastSignal'] = 'WAIT';
+                    if (!$quiet) {
+                        $log[] = [
+                            't' => $nowMs,
+                            'symbol' => $symbol,
+                            'msg' => sprintf('Auto-buy OFF (sell-only mode) price=%s chg=%+.3f%%', $price, $changePct),
+                        ];
+                    }
+                    continue;
+                }
                 $buyHit = $buyDrop === 0.0 ? $changePct < 0 : $changePct <= -$buyDrop;
                 if ($buyHit) {
                     if ($usdtFree < $buyUsdt - 1e-8) {
