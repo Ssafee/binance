@@ -372,6 +372,6 @@ $authed = ladderIsAuthed();
     window.LADDER_MODE = <?= json_encode($mode) ?>;
     window.LADDER_AUTHED = <?= $authed ? 'true' : 'false' ?>;
   </script>
-  <script src="assets/ladder.js?v=14"></script>
+  <script src="assets/ladder.js?v=15"></script>
 </body>
 </html>

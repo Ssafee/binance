@@ -575,6 +575,7 @@ function ladderExecuteSell(
         if ($qtyNum <= 0 || $qtyNum < (float) $meta['minQty']) {
             return [
                 'ok' => false,
+                'tooSmall' => true,
                 'error' => sprintf(
                     'Quantity too small to sell on Binance (have %.8f %s, step %s).',
                     $sellable,
@@ -588,13 +589,14 @@ function ladderExecuteSell(
         if ($notional + 1e-9 < (float) $meta['minNotional']) {
             return [
                 'ok' => false,
+                'tooSmall' => true,
+                'belowNotional' => true,
                 'error' => sprintf(
                     'This sell is worth ~%.2f USDT but Binance needs at least %.2f (NOTIONAL). '
                     . 'Wait for more matured entries and sell them together, or increase the daily amount.',
                     $notional,
                     (float) $meta['minNotional']
                 ),
-                'belowNotional' => true,
             ];
         }
 
@@ -867,6 +869,16 @@ function ladderSweepMaturedForSymbol(
 
     $res = ladderExecuteSell($mode, $state, $ids, 'target', $price, false);
     if (empty($res['ok'])) {
+        // Dust leftover (below LOT_SIZE / NOTIONAL) — wait for the next daily buy to combine.
+        if (!empty($res['tooSmall']) || !empty($res['belowNotional'])) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'waiting' => true,
+                'symbol' => $symbol,
+                'reason' => $symbol . ' leftover too small to sell alone — will join the next buy',
+            ];
+        }
         return [
             'ok' => false,
             'symbol' => $symbol,
@@ -1022,7 +1034,15 @@ function ladderRunPass(string $mode, array $opts = []): array
     } elseif (!empty($sweep['error'])) {
         $log[] = ['t' => $nowMs, 'msg' => 'Sweep: ' . $sweep['error']];
     } else {
-        $log[] = ['t' => $nowMs, 'msg' => 'Sweep skipped — no matured entries'];
+        $waiting = [];
+        foreach ($sweep['results'] ?? [] as $row) {
+            if (!empty($row['waiting']) && !empty($row['reason'])) {
+                $waiting[] = $row['reason'];
+            }
+        }
+        $log[] = ['t' => $nowMs, 'msg' => $waiting !== []
+            ? 'Sweep skipped — ' . implode('; ', $waiting)
+            : 'Sweep skipped — no matured entries'];
     }
 
     $state['lastRunAt'] = $nowMs;

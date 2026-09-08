@@ -370,9 +370,12 @@
       var matured = !!row.matured;
       var price = priceFor(row.symbol);
       var cls = isSold ? 'is-sold' : (matured ? 'is-matured' : '');
+      var leftover = !isSold && String(row.note || '').indexOf('Remainder') >= 0;
       var pill = isSold
         ? '<span class="lad-pill lad-pill-sold">SOLD</span>'
-        : (matured ? '<span class="lad-pill lad-pill-ready">READY</span>' : '<span class="lad-pill lad-pill-open">HOLDING</span>');
+        : leftover
+          ? '<span class="lad-pill lad-pill-open">LEFTOVER</span>'
+          : (matured ? '<span class="lad-pill lad-pill-ready">READY</span>' : '<span class="lad-pill lad-pill-open">HOLDING</span>');
 
       var nowCell = '—';
       var plCell = '—';
@@ -398,7 +401,8 @@
           (IS_SIM ? ' <button type="button" class="lad-row-btn lad-row-btn-del" data-del="' + esc(row.id) + '">✕</button>' : '');
 
       return '<tr class="' + cls + '">' +
-        '<td>' + esc(row.buyDate) + '<br><small>' + esc(row.symbol) + '</small></td>' +
+        '<td>' + esc(row.buyDate) + '<br><small>' + esc(row.symbol) +
+          (leftover ? ' · leftover' : '') + '</small></td>' +
         '<td>' + fmtPrice(row.buyPrice) + '</td>' +
         '<td>' + trimNum(row.qty, 8) + '</td>' +
         '<td>' + fmtUsd(row.costUsdt) + '</td>' +
