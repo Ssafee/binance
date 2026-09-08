@@ -19,11 +19,13 @@ require_once dirname(__DIR__) . '/api/lib/bootstrap.php';
 require_once dirname(__DIR__) . '/api/lib/env.php';
 require_once dirname(__DIR__) . '/api/lib/ladder_store.php';
 require_once dirname(__DIR__) . '/api/lib/ladder_engine.php';
-require_once dirname(__DIR__) . '/api/lib/mailer.php';
 require_once dirname(__DIR__) . '/api/lib/cron_log_store.php';
 
 $isCli = PHP_SAPI === 'cli';
 $secret = trim((string) env('CRON_SECRET', ''));
+
+// Prove cron started even if the rest of the run fails later.
+ladderCronHeartbeat('started cli=' . ($isCli ? '1' : '0'));
 
 if (!$isCli) {
     header('Content-Type: application/json; charset=utf-8');
@@ -149,14 +151,19 @@ if (!ladderAcquireLock(70)) {
 }
 
 $tickSec = max(3, (int) env('CRON_TICK_SECONDS', '5'));
-$loopSec = max($tickSec, (int) env('CRON_LOOP_SECONDS', '55'));
+// Browser/proxy often times out ~30–60s. Keep the long multi-tick loop for CLI only.
+if ($isCli) {
+    $loopSec = max($tickSec, (int) env('CRON_LOOP_SECONDS', '55'));
+} else {
+    $loopSec = 0; // one pass, no sleep — finishes before gateway timeout
+}
 $started = time();
 $ticks = 0;
 $actions = 0;
 $log = [];
 $error = null;
 
-@set_time_limit(90);
+@set_time_limit($isCli ? 90 : 25);
 @ignore_user_abort(true);
 
 try {
@@ -178,7 +185,7 @@ try {
         }
 
         $elapsed = time() - $started;
-        if ($elapsed + $tickSec >= $loopSec) {
+        if (!$isCli || $elapsed + $tickSec >= $loopSec) {
             break;
         }
         sleep($tickSec);
@@ -199,13 +206,6 @@ foreach (ladderSymbolsInState($state) as $symbol) {
     }
 }
 $dashboard = ladderDashboard($state, $prices);
-$serverAuto = false;
-foreach ($configs as $cfg) {
-    if (!empty($cfg['autoBuyEnabled']) || !empty($cfg['autoSellEnabled'])) {
-        $serverAuto = true;
-        break;
-    }
-}
 
 $out = [
     'ok' => $error === null,
@@ -225,19 +225,7 @@ $out = [
     'log' => array_slice($log, 0, 20),
 ];
 
-// Reuse the existing cron mailer (it decides whether to actually send,
-// based on CRON_EMAIL_ENABLED / CRON_EMAIL_MODE).
-$out['emailSent'] = sendCronEmail([
-    'ok' => $out['ok'],
-    'actions' => $actions,
-    'ticks' => $ticks,
-    'skipped' => false,
-    'serverAuto' => $serverAuto,
-    'items' => $dashboard['openCount'],
-    'error' => $error,
-    'log' => $log,
-]);
-
+// Persist run history for cron-log.php
 ladderCronLogAppend([
     'ok' => $out['ok'],
     'mode' => $mode,
@@ -247,9 +235,9 @@ ladderCronLogAppend([
     'symbols' => $out['symbols'],
     'openEntries' => $dashboard['openCount'],
     'error' => $error,
-    'emailSent' => $out['emailSent'],
     'log' => $log,
 ]);
+$out['via'] = $isCli ? 'cli' : 'http';
 
 if ($error !== null && $isCli) {
     ladderEmit($out, $isCli);

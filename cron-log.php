@@ -32,6 +32,18 @@ if (strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET')) === 'POST' && iss
 
 $authed = ladderIsAuthed();
 $runs = $authed ? ladderCronLogLoad() : [];
+$heartbeat = '';
+$heartbeatAge = null;
+if ($authed) {
+    $hbPath = ladderCronHeartbeatPath();
+    if (is_readable($hbPath)) {
+        $heartbeat = trim((string) file_get_contents($hbPath));
+        $mtime = @filemtime($hbPath);
+        if ($mtime) {
+            $heartbeatAge = max(0, time() - $mtime);
+        }
+    }
+}
 $tz = (string) env('APP_TIMEZONE', 'UTC');
 
 function cronLogLocalTime(int $ms, string $tz): string
@@ -126,6 +138,24 @@ function cronLogStatus(array $run): string
           <h2><?= count($runs) ?> saved run(s)</h2>
         </div>
         <button type="button" class="ghost-btn" onclick="location.reload()">Refresh</button>
+      </div>
+
+      <div class="lad-sim-box" style="margin-top:0">
+        <p class="lad-label">Last heartbeat</p>
+        <?php if ($heartbeat === ''): ?>
+          <p class="lad-alert lad-alert-bad">
+            No heartbeat yet — cron may not be reaching the script, or
+            <code>api/lib/cron_log_store.php</code> / <code>cron/ladder_cron.php</code> are not uploaded.
+          </p>
+        <?php else: ?>
+          <p class="lad-value" style="font-size:1rem"><?= htmlspecialchars($heartbeat, ENT_QUOTES) ?></p>
+          <p class="lad-muted">
+            <?php if ($heartbeatAge !== null): ?>
+              File age: <?= (int) $heartbeatAge ?>s ago
+              <?= $heartbeatAge > 120 ? '(⚠️ older than 2 minutes — cron may be stuck/failing)' : '(ok)' ?>
+            <?php endif; ?>
+          </p>
+        <?php endif; ?>
       </div>
 
       <?php if ($runs === []): ?>
