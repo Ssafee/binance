@@ -315,6 +315,7 @@ $authed = ladderIsAuthed();
               <th>Buy price</th>
               <th>Qty</th>
               <th>Cost</th>
+              <th>Value now</th>
               <th>Sell target</th>
               <th>Now</th>
               <th>P/L</th>
@@ -323,7 +324,7 @@ $authed = ladderIsAuthed();
             </tr>
           </thead>
           <tbody id="lad-rows">
-            <tr><td colspan="9" class="lad-empty">Loading…</td></tr>
+            <tr><td colspan="10" class="lad-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -371,6 +372,6 @@ $authed = ladderIsAuthed();
     window.LADDER_MODE = <?= json_encode($mode) ?>;
     window.LADDER_AUTHED = <?= $authed ? 'true' : 'false' ?>;
   </script>
-  <script src="assets/ladder.js?v=11"></script>
+  <script src="assets/ladder.js?v=14"></script>
 </body>
 </html>

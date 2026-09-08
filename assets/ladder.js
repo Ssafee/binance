@@ -345,7 +345,9 @@
     var copy = Object.assign({}, row);
     if (copy.status !== 'OPEN' || !price) return copy;
     var keep = 1 - num(copy.feePct) / 100;
-    var value = num(copy.qty) * price * keep;
+    var spot = num(copy.qty) * price;
+    var value = spot * keep;
+    copy.nowSpotUsdt = spot;
     copy.nowValueUsdt = value;
     copy.nowProfitUsdt = value - num(copy.costUsdt);
     copy.nowProfitPct = num(copy.costUsdt) > 0 ? (copy.nowProfitUsdt / num(copy.costUsdt)) * 100 : null;
@@ -357,7 +359,7 @@
   function renderRows(rows) {
     var tbody = $('lad-rows');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="9" class="lad-empty">' +
+      tbody.innerHTML = '<tr><td colspan="10" class="lad-empty">' +
         (state.status || state.symbolFilter ? 'No entries match this filter.' : 'No entries yet. Add a config and buy.') +
         '</td></tr>';
       return;
@@ -374,14 +376,17 @@
 
       var nowCell = '—';
       var plCell = '—';
+      var valueCell = '—';
       if (isSold) {
         nowCell = fmtPrice(row.sellPrice) + '<br><small>' + fmtUsd(row.proceedsUsdt, 4) + ' USDT</small>';
+        valueCell = fmtUsd(row.proceedsUsdt, 4);
         plCell = '<span class="' + (num(row.profitUsdt) >= 0 ? 'lad-up' : 'lad-down') + '">' +
           fmtSigned(row.profitUsdt) + '<br><small>' + fmtPct(row.profitPct) + '</small></span>';
       } else if (price) {
         nowCell = fmtPrice(price) + '<br><small>' +
           (matured ? 'target reached' : (row.toTargetPct != null ? fmtPct(row.toTargetPct) + ' to go' : '')) +
           '</small>';
+        valueCell = '<strong>' + fmtUsd(row.nowSpotUsdt, 4) + '</strong>';
         plCell = '<span class="' + (num(row.nowProfitUsdt) >= 0 ? 'lad-up' : 'lad-down') + '">' +
           fmtSigned(row.nowProfitUsdt) + '<br><small>' + fmtPct(row.nowProfitPct) + '</small></span>';
       }
@@ -397,6 +402,7 @@
         '<td>' + fmtPrice(row.buyPrice) + '</td>' +
         '<td>' + trimNum(row.qty, 8) + '</td>' +
         '<td>' + fmtUsd(row.costUsdt) + '</td>' +
+        '<td>' + valueCell + '</td>' +
         '<td>' + fmtPrice(row.targetPrice) + '<br><small>' + fmtUsd(row.targetUsdt, 4) + ' USDT</small></td>' +
         '<td>' + nowCell + '</td>' +
         '<td>' + plCell + '</td>' +
