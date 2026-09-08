@@ -743,6 +743,16 @@ function ladderDailyBuyForConfig(
         ];
     }
 
+    // Do not buy mid-day just because a config was saved. Wait for UTC midnight.
+    if (!ladderIsUtcBuyWindow()) {
+        return [
+            'ok' => true,
+            'skipped' => true,
+            'symbol' => $symbol,
+            'reason' => $symbol . ' waiting for UTC midnight window (00:00–00:59). Next: ' . ladderNextUtcMidnight(),
+        ];
+    }
+
     $usdt = (float) $config['dailyUsdt'];
     if ($usdt <= 0) {
         return ['ok' => true, 'skipped' => true, 'symbol' => $symbol, 'reason' => $symbol . ' daily amount is 0'];

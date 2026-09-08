@@ -84,7 +84,7 @@ function cronLogStatus(array $run): string
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=24">
-  <link rel="stylesheet" href="assets/ladder.css?v=12">
+  <link rel="stylesheet" href="assets/ladder.css?v=13">
 </head>
 <body class="lad-body">
   <div class="bg-grid" aria-hidden="true"></div>
@@ -152,7 +152,7 @@ function cronLogStatus(array $run): string
           <p class="lad-muted">
             <?php if ($heartbeatAge !== null): ?>
               File age: <?= (int) $heartbeatAge ?>s ago
-              <?= $heartbeatAge > 120 ? '(⚠️ older than 2 minutes — cron may be stuck/failing)' : '(ok)' ?>
+              <?= $heartbeatAge > 120 ? '(older than 2 minutes — cron may be stuck/failing)' : '(ok)' ?>
             <?php endif; ?>
           </p>
         <?php endif; ?>
@@ -164,62 +164,63 @@ function cronLogStatus(array $run): string
           <code>/usr/bin/php …/cron/ladder_cron.php</code>
         </p>
       <?php else: ?>
-        <div class="table-wrap">
-          <table class="lad-table lad-cron-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Status</th>
-                <th>Actions</th>
-                <th>Ticks</th>
-                <th>Configs</th>
-                <th>Detail</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div class="lad-cron-list">
 <?php foreach ($runs as $run):
     $status = cronLogStatus($run);
     $when = isset($run['at']) ? cronLogLocalTime((int) $run['at'], $tz) : '—';
     $symbols = is_array($run['symbols'] ?? null) ? implode(', ', $run['symbols']) : '';
-    $detailParts = [];
+    $logLines = is_array($run['log'] ?? null) ? $run['log'] : [];
+    $meta = [];
     if (!empty($run['reason'])) {
-        $detailParts[] = (string) $run['reason'];
+        $meta[] = (string) $run['reason'];
     }
     if (!empty($run['error'])) {
-        $detailParts[] = (string) $run['error'];
+        $meta[] = (string) $run['error'];
     }
-    if ($symbols !== '') {
-        $detailParts[] = $symbols;
-    }
-    $logLines = is_array($run['log'] ?? null) ? $run['log'] : [];
 ?>
-              <tr class="lad-cron-<?= htmlspecialchars($status, ENT_QUOTES) ?>">
-                <td>
-                  <strong><?= htmlspecialchars($when, ENT_QUOTES) ?></strong>
-                  <div class="lad-muted"><?= htmlspecialchars((string) ($run['atIso'] ?? ''), ENT_QUOTES) ?></div>
-                </td>
-                <td><span class="lad-cron-pill"><?= htmlspecialchars(strtoupper($status), ENT_QUOTES) ?></span></td>
-                <td><?= (int) ($run['actions'] ?? 0) ?></td>
-                <td><?= (int) ($run['ticks'] ?? 0) ?></td>
-                <td><?= (int) ($run['configs'] ?? 0) ?></td>
-                <td>
-                  <?php if ($detailParts !== []): ?>
-                    <div><?= htmlspecialchars(implode(' · ', $detailParts), ENT_QUOTES) ?></div>
-                  <?php endif; ?>
-                  <?php if ($logLines !== []): ?>
-                    <ul class="lad-cron-msgs">
-                      <?php foreach (array_slice($logLines, 0, 6) as $msg): ?>
-                        <li><?= htmlspecialchars((string) $msg, ENT_QUOTES) ?></li>
-                      <?php endforeach; ?>
-                    </ul>
-                  <?php elseif ($detailParts === []): ?>
-                    <span class="lad-muted">—</span>
-                  <?php endif; ?>
-                </td>
-              </tr>
+          <article class="lad-cron-card lad-cron-<?= htmlspecialchars($status, ENT_QUOTES) ?>">
+            <header class="lad-cron-card-head">
+              <div class="lad-cron-card-when">
+                <strong><?= htmlspecialchars($when, ENT_QUOTES) ?></strong>
+                <span class="lad-muted"><?= htmlspecialchars((string) ($run['atIso'] ?? ''), ENT_QUOTES) ?></span>
+              </div>
+              <span class="lad-cron-pill"><?= htmlspecialchars(strtoupper($status), ENT_QUOTES) ?></span>
+            </header>
+
+            <dl class="lad-cron-stats">
+              <div>
+                <dt>Actions</dt>
+                <dd><?= (int) ($run['actions'] ?? 0) ?></dd>
+              </div>
+              <div>
+                <dt>Ticks</dt>
+                <dd><?= (int) ($run['ticks'] ?? 0) ?></dd>
+              </div>
+              <div>
+                <dt>Configs</dt>
+                <dd><?= (int) ($run['configs'] ?? 0) ?></dd>
+              </div>
+              <div>
+                <dt>Symbols</dt>
+                <dd><?= $symbols !== '' ? htmlspecialchars($symbols, ENT_QUOTES) : '—' ?></dd>
+              </div>
+            </dl>
+
+            <?php if ($meta !== []): ?>
+              <p class="lad-cron-meta"><?= htmlspecialchars(implode(' · ', $meta), ENT_QUOTES) ?></p>
+            <?php endif; ?>
+
+            <?php if ($logLines !== []): ?>
+              <ul class="lad-cron-msgs">
+                <?php foreach (array_slice($logLines, 0, 8) as $msg): ?>
+                  <li><?= htmlspecialchars((string) $msg, ENT_QUOTES) ?></li>
+                <?php endforeach; ?>
+              </ul>
+            <?php elseif ($meta === []): ?>
+              <p class="lad-muted">No detail messages.</p>
+            <?php endif; ?>
+          </article>
 <?php endforeach; ?>
-            </tbody>
-          </table>
         </div>
       <?php endif; ?>
     </section>

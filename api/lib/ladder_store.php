@@ -638,7 +638,7 @@ function ladderDashboard(array $state, array|float $prices): array
     $today = binanceTodayDate();
     $anyDue = false;
     foreach (ladderConfigs($state) as $cfg) {
-        if ((string) $cfg['lastBuyDate'] !== $today) {
+        if ((string) $cfg['lastBuyDate'] !== $today && ladderIsUtcBuyWindow()) {
             $anyDue = true;
             break;
         }
@@ -674,8 +674,8 @@ function ladderDashboard(array $state, array|float $prices): array
         'today' => $today,
         'timezone' => 'UTC (Binance day)',
         'nextBuyAtUtc' => $anyDue
-            ? 'due now (first cron after UTC midnight)'
-            : gmdate('Y-m-d', time() + 86400) . ' 00:00:00 UTC',
+            ? 'due now (UTC 00:00–00:59 window)'
+            : ladderNextUtcMidnight(),
         'appTimezone' => appTimezone(),
     ];
 }

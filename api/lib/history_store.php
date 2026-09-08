@@ -246,6 +246,21 @@ function binanceTodayDate(): string
     return gmdate('Y-m-d');
 }
 
+/**
+ * Auto daily-buy window: first hour of the Binance UTC day (00:00–00:59 UTC).
+ * Manual Buy on the page still works any time.
+ */
+function ladderIsUtcBuyWindow(): bool
+{
+    return (int) gmdate('G') === 0;
+}
+
+function ladderNextUtcMidnight(): string
+{
+    $next = gmmktime(0, 0, 0, (int) gmdate('n'), (int) gmdate('j') + 1, (int) gmdate('Y'));
+    return gmdate('Y-m-d H:i:s', $next) . ' UTC';
+}
+
 function binanceTradeDate(int $timeMs): string
 {
     return gmdate('Y-m-d', (int) floor($timeMs / 1000));

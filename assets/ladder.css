@@ -613,14 +613,82 @@ details.lad-panel[open] > summary {
   background: var(--panel-solid);
 }
 
-.lad-cron-table td {
-  vertical-align: top;
+.lad-cron-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.lad-cron-card {
+  padding: 0.95rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.lad-cron-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.lad-cron-card-when {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.lad-cron-card-when strong {
+  font-size: 0.95rem;
+  word-break: break-word;
+}
+
+.lad-cron-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin: 0 0 0.65rem;
+}
+
+.lad-cron-stats div {
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(15, 122, 90, 0.06);
+}
+
+.lad-cron-stats dt {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lad-cron-stats dd {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.lad-cron-meta {
+  margin: 0 0 0.45rem;
+  font-size: 0.86rem;
+  color: var(--ink);
+  word-break: break-word;
 }
 
 .lad-cron-pill {
   display: inline-block;
-  padding: 0.15rem 0.45rem;
-  border-radius: 6px;
+  flex-shrink: 0;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   font-weight: 600;
@@ -634,6 +702,10 @@ details.lad-panel[open] > summary {
   color: #b03030;
 }
 
+.lad-cron-error {
+  border-color: rgba(176, 48, 48, 0.28);
+}
+
 .lad-cron-skipped .lad-cron-pill,
 .lad-cron-dry .lad-cron-pill {
   background: rgba(100, 100, 100, 0.12);
@@ -645,16 +717,33 @@ details.lad-panel[open] > summary {
   color: #8a6418;
 }
 
+.lad-cron-action {
+  border-color: rgba(201, 148, 58, 0.35);
+}
+
 .lad-cron-msgs {
-  margin: 0.35rem 0 0;
-  padding-left: 1rem;
+  margin: 0;
+  padding: 0.55rem 0.75rem 0.55rem 1.25rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
   font-family: var(--font-mono);
   font-size: 0.75rem;
   line-height: 1.55;
   color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.lad-cron-msgs li + li {
+  margin-top: 0.2rem;
 }
 
 .lad-muted {
   color: var(--muted);
   font-size: 0.78rem;
+}
+
+@media (max-width: 720px) {
+  .lad-cron-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }

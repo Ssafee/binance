@@ -100,7 +100,7 @@ if ($isDry) {
     $today = binanceTodayDate();
     $due = [];
     foreach ($configs as $cfg) {
-        if ((string) $cfg['lastBuyDate'] !== $today) {
+        if ((string) $cfg['lastBuyDate'] !== $today && ladderIsUtcBuyWindow()) {
             $due[] = $cfg['symbol'];
         }
     }
