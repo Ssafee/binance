@@ -239,6 +239,19 @@ function tradeLocalDate(int $timeMs): string
 }
 
 /**
+ * Binance calendar day (UTC). Spot daily boundaries / "day start" are UTC midnight.
+ */
+function binanceTodayDate(): string
+{
+    return gmdate('Y-m-d');
+}
+
+function binanceTradeDate(int $timeMs): string
+{
+    return gmdate('Y-m-d', (int) floor($timeMs / 1000));
+}
+
+/**
  * Today's realized + open positions report (FIFO per symbol).
  *
  * @param array<string, float> $livePrices symbol => last price

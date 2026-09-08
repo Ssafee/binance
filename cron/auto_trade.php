@@ -15,6 +15,7 @@ define('AUTO_TRADE_CRON', true);
 require_once dirname(__DIR__) . '/api/lib/bootstrap.php';
 require_once dirname(__DIR__) . '/api/lib/env.php';
 require_once dirname(__DIR__) . '/api/lib/auto_engine.php';
+require_once dirname(__DIR__) . '/api/lib/mailer.php';
 
 $isCli = PHP_SAPI === 'cli';
 $secret = trim((string) env('CRON_SECRET', ''));
@@ -49,6 +50,7 @@ try {
             'cron' => 'data/cron_log.json',
         ],
     ];
+    $out['emailSent'] = sendCronEmail($out);
     if ($isCli) {
         echo json_encode($out, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) . PHP_EOL;
     } else {
@@ -60,6 +62,7 @@ try {
         't' => (int) round(microtime(true) * 1000),
         'error' => $e->getMessage(),
     ]);
+    $payload['emailSent'] = sendCronEmail($payload);
     if ($isCli) {
         fwrite(STDERR, json_encode($payload) . PHP_EOL);
         exit(1);

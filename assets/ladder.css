@@ -1,0 +1,614 @@
+/* Ladder + simulator pages. Design tokens come from style.css. */
+
+.lad-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.lad-badge-live {
+  color: #fff;
+  background: var(--down);
+  border-color: transparent;
+}
+
+.lad-badge-sim {
+  color: var(--accent-deep);
+  background: rgba(15, 122, 90, 0.14);
+}
+
+.lad-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.lad-nav a {
+  color: var(--accent-deep);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(15, 122, 90, 0.35);
+}
+
+.lad-nav a:hover {
+  color: var(--ink);
+}
+
+.lad-nav-out {
+  margin-left: auto;
+  color: var(--down) !important;
+  border-bottom-color: rgba(180, 35, 24, 0.35) !important;
+}
+
+/* ---------- login ---------- */
+
+.lad-login {
+  max-width: 420px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.lad-login h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+.lad-login-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lad-login-form label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.lad-login-form input {
+  padding: 0.75rem 0.9rem;
+  font: inherit;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel-solid);
+}
+
+.lad-login-form button {
+  margin-top: 0.5rem;
+  padding: 0.8rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.lad-login-form button:hover {
+  background: var(--accent-deep);
+}
+
+/* ---------- alerts ---------- */
+
+.lad-alert {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.lad-alert code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.lad-alert-bad {
+  color: var(--down);
+  background: rgba(180, 35, 24, 0.1);
+}
+
+.lad-alert-warn {
+  color: var(--wait);
+  background: rgba(201, 148, 58, 0.14);
+}
+
+.lad-status {
+  min-height: 1.4rem;
+  margin: 0.75rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.lad-status.is-good { color: var(--up); }
+.lad-status.is-bad { color: var(--down); }
+
+/* ---------- top strip ---------- */
+
+.lad-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem 1.5rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.lad-label {
+  margin: 0 0 0.3rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+
+.lad-value {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.lad-value.lad-up { color: var(--up); }
+.lad-value.lad-down { color: var(--down); }
+
+.lad-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--muted);
+  vertical-align: middle;
+}
+
+.lad-dot.is-live { background: var(--up); box-shadow: 0 0 0 3px rgba(18, 122, 69, 0.18); }
+.lad-dot.is-down { background: var(--down); }
+
+/* ---------- panels ---------- */
+
+.lad-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+.lad-panel > h2,
+.lad-table-head h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+details.lad-panel > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+details.lad-panel > summary small {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+details.lad-panel[open] > summary {
+  margin-bottom: 1.25rem;
+}
+
+.lad-config-summary {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.lad-field-help {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.lad-field-help.is-ok { color: var(--up); }
+.lad-field-help.is-bad { color: var(--down); }
+
+.lad-quick-symbols {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.lad-quick-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-right: 0.25rem;
+}
+
+.lad-chip {
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-deep);
+  background: rgba(15, 122, 90, 0.08);
+  border: 1px solid rgba(15, 122, 90, 0.25);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.lad-chip:hover {
+  background: rgba(15, 122, 90, 0.16);
+}
+
+.lad-chip.is-active {
+  color: #fff;
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.lad-grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.lad-field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lad-field > span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.lad-field input,
+.lad-field select {
+  padding: 0.6rem 0.7rem;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-solid);
+  color: var(--ink);
+}
+
+.lad-field-sm input,
+.lad-field-sm select {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.82rem;
+}
+
+.lad-check {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.lad-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
+}
+
+.lad-check-inline {
+  margin-top: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.lad-hint {
+  margin: 1rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.lad-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.25rem;
+}
+
+.lad-actions button {
+  padding: 0.65rem 1.05rem;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.lad-actions button:hover { background: var(--accent-deep); }
+.lad-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.lad-actions .ghost-btn {
+  color: var(--accent-deep);
+  background: transparent;
+  border: 1px solid rgba(15, 122, 90, 0.35);
+}
+
+.lad-actions .ghost-btn:hover {
+  background: rgba(15, 122, 90, 0.08);
+}
+
+.lad-btn-good { background: var(--up) !important; }
+.lad-btn-bad { background: var(--down) !important; }
+
+/* ---------- dashboard cards ---------- */
+
+.lad-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.lad-card {
+  display: grid;
+  gap: 0.3rem;
+  padding: 1.1rem 1.2rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.lad-card span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.lad-card strong {
+  font-family: var(--font-mono);
+  font-size: 1.2rem;
+}
+
+.lad-card small {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.lad-card-key {
+  background: linear-gradient(150deg, rgba(15, 122, 90, 0.12), rgba(255, 252, 246, 0.8));
+}
+
+/* ---------- table ---------- */
+
+.lad-table-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.lad-table-tools {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.lad-table-wrap {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+
+.lad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.lad-table th,
+.lad-table td {
+  padding: 0.6rem 0.7rem;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+
+.lad-table th:first-child,
+.lad-table td:first-child {
+  text-align: left;
+}
+
+.lad-table th {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.lad-table td {
+  font-family: var(--font-mono);
+}
+
+.lad-table tbody tr:hover {
+  background: rgba(15, 122, 90, 0.04);
+}
+
+.lad-table tr.is-matured {
+  background: rgba(18, 122, 69, 0.1);
+}
+
+.lad-table tr.is-sold {
+  color: var(--muted);
+}
+
+.lad-col-act { text-align: right; }
+
+.lad-empty {
+  padding: 1.5rem !important;
+  text-align: center !important;
+  color: var(--muted);
+  font-family: var(--font-body) !important;
+}
+
+.lad-up { color: var(--up); font-weight: 600; }
+.lad-down { color: var(--down); font-weight: 600; }
+.lad-wait { color: var(--wait); }
+
+.lad-pill {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.lad-pill-open { color: var(--wait); background: rgba(201, 148, 58, 0.16); }
+.lad-pill-ready { color: #fff; background: var(--up); }
+.lad-pill-sold { color: var(--muted); background: rgba(16, 35, 28, 0.08); }
+
+.lad-row-btn {
+  padding: 0.35rem 0.7rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.lad-row-btn:hover { background: var(--accent-deep); }
+.lad-row-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.lad-row-btn-ready { background: var(--up); }
+.lad-row-btn-del {
+  margin-left: 0.35rem;
+  color: var(--down);
+  background: transparent;
+  border: 1px solid rgba(180, 35, 24, 0.3);
+}
+.lad-row-btn-del:hover { background: rgba(180, 35, 24, 0.08); }
+
+.lad-progress {
+  display: block;
+  width: 100%;
+  min-width: 70px;
+  height: 4px;
+  margin-top: 0.3rem;
+  border-radius: 999px;
+  background: rgba(16, 35, 28, 0.1);
+  overflow: hidden;
+}
+
+.lad-progress i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+/* ---------- pager / log ---------- */
+
+.lad-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.lad-pager button {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-deep);
+  background: transparent;
+  border: 1px solid rgba(15, 122, 90, 0.35);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.lad-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.lad-log {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+
+.lad-sim .brand-dot {
+  background: linear-gradient(135deg, #6a8fd8, #c9943a);
+}
+
+.lad-sim-box {
+  margin-bottom: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px dashed rgba(15, 122, 90, 0.35);
+  border-radius: 14px;
+  background: rgba(15, 122, 90, 0.05);
+}
+
+.lad-subhead {
+  margin: 1.25rem 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.lad-price-input {
+  width: 7.5rem;
+  padding: 0.35rem 0.45rem;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-solid);
+}

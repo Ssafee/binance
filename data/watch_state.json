@@ -10,10 +10,10 @@
     "items": [
         {
             "symbol": "ETHUSDT",
-            "basePrice": 1932.0100000000002,
-            "holding": true,
+            "basePrice": 2494.38,
+            "holding": false,
             "addedAt": 1786109668531,
-            "lastSignal": "BUY",
+            "lastSignal": "WAIT",
             "lastActionAt": null,
             "lastError": null
         },
@@ -22,7 +22,7 @@
             "basePrice": 65229.38999999999,
             "holding": true,
             "addedAt": 1786104748133,
-            "lastSignal": "BUY",
+            "lastSignal": "SELL",
             "lastActionAt": null,
             "lastError": null
         }
@@ -30,5 +30,5 @@
     "lastRunAt": null,
     "lastRunOk": null,
     "lastRunLog": [],
-    "updatedAt": 1786364631672
+    "updatedAt": 1788860599455
 }

@@ -1,6 +1,8 @@
 .env
 .env.local
 
+/vendor/
+
 # Keep runtime data local, but ship current watchlist for deploy
 /data/*
 !/data/.htaccess
