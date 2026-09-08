@@ -674,7 +674,7 @@ function ladderDashboard(array $state, array|float $prices): array
         'today' => $today,
         'timezone' => 'UTC (Binance day)',
         'nextBuyAtUtc' => $anyDue
-            ? 'due now (UTC 00:00–00:59 window)'
+            ? 'due now (UTC 00:00–01:59 window)'
             : ladderNextUtcMidnight(),
         'appTimezone' => appTimezone(),
     ];

@@ -749,7 +749,7 @@ function ladderDailyBuyForConfig(
             'ok' => true,
             'skipped' => true,
             'symbol' => $symbol,
-            'reason' => $symbol . ' waiting for UTC midnight window (00:00–00:59). Next: ' . ladderNextUtcMidnight(),
+            'reason' => $symbol . ' waiting for UTC buy window (00:00–01:59). Next: ' . ladderNextUtcMidnight(),
         ];
     }
 
