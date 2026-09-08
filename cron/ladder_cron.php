@@ -20,6 +20,7 @@ require_once dirname(__DIR__) . '/api/lib/env.php';
 require_once dirname(__DIR__) . '/api/lib/ladder_store.php';
 require_once dirname(__DIR__) . '/api/lib/ladder_engine.php';
 require_once dirname(__DIR__) . '/api/lib/mailer.php';
+require_once dirname(__DIR__) . '/api/lib/cron_log_store.php';
 
 $isCli = PHP_SAPI === 'cli';
 $secret = trim((string) env('CRON_SECRET', ''));
@@ -102,7 +103,7 @@ if ($isDry) {
         }
     }
 
-    ladderEmit([
+    $dryOut = [
         'ok' => true,
         'mode' => $mode . ' (DRY RUN — no orders placed)',
         'configs' => $configs,
@@ -114,13 +115,35 @@ if ($isDry) {
         'maturedNow' => count($matured),
         'matured' => $matured,
         'dashboard' => ladderDashboard($state, $prices),
-    ], $isCli);
+    ];
+    ladderCronLogAppend([
+        'ok' => true,
+        'dry' => true,
+        'mode' => $mode,
+        'actions' => 0,
+        'ticks' => 0,
+        'configs' => count($configs),
+        'symbols' => array_values(array_map(static fn ($c) => $c['symbol'], $configs)),
+        'openEntries' => $dryOut['openEntries'],
+        'reason' => 'Dry run — no orders placed',
+        'log' => array_map(
+            static fn ($sym) => $sym . ' daily buy due',
+            $due
+        ),
+    ]);
+    ladderEmit($dryOut, $isCli);
     exit;
 }
 
 /* ---------------- real pass ---------------- */
 
 if (!ladderAcquireLock(70)) {
+    ladderCronLogAppend([
+        'ok' => true,
+        'skipped' => true,
+        'mode' => $mode,
+        'reason' => 'Previous ladder run still active',
+    ]);
     ladderEmit(['ok' => true, 'skipped' => true, 'reason' => 'Previous ladder run still active'], $isCli);
     exit;
 }
@@ -212,6 +235,19 @@ $out['emailSent'] = sendCronEmail([
     'serverAuto' => $serverAuto,
     'items' => $dashboard['openCount'],
     'error' => $error,
+    'log' => $log,
+]);
+
+ladderCronLogAppend([
+    'ok' => $out['ok'],
+    'mode' => $mode,
+    'actions' => $actions,
+    'ticks' => $ticks,
+    'configs' => count($configs),
+    'symbols' => $out['symbols'],
+    'openEntries' => $dashboard['openCount'],
+    'error' => $error,
+    'emailSent' => $out['emailSent'],
     'log' => $log,
 ]);
 

@@ -45,7 +45,7 @@ $authed = ladderIsAuthed();
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=24">
-  <link rel="stylesheet" href="assets/ladder.css?v=11">
+  <link rel="stylesheet" href="assets/ladder.css?v=12">
 </head>
 <body class="lad-body<?= $isSim ? ' lad-sim' : '' ?>">
   <div class="bg-grid" aria-hidden="true"></div>
@@ -67,6 +67,7 @@ $authed = ladderIsAuthed();
       <nav class="lad-nav">
         <a href="index.php">← Main dashboard</a>
         <a href="<?= $other ?>"><?= $otherLabel ?></a>
+        <a href="cron-log.php">Cron log</a>
         <?php if ($authed): ?>
           <a class="lad-nav-out" href="<?= $self ?>?logout=1">Sign out</a>
         <?php endif; ?>

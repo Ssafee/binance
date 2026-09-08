@@ -612,3 +612,49 @@ details.lad-panel[open] > summary {
   border-radius: 8px;
   background: var(--panel-solid);
 }
+
+.lad-cron-table td {
+  vertical-align: top;
+}
+
+.lad-cron-pill {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: rgba(15, 122, 90, 0.12);
+  color: #0f7a5a;
+}
+
+.lad-cron-error .lad-cron-pill {
+  background: rgba(176, 48, 48, 0.12);
+  color: #b03030;
+}
+
+.lad-cron-skipped .lad-cron-pill,
+.lad-cron-dry .lad-cron-pill {
+  background: rgba(100, 100, 100, 0.12);
+  color: var(--muted);
+}
+
+.lad-cron-action .lad-cron-pill {
+  background: rgba(201, 148, 58, 0.18);
+  color: #8a6418;
+}
+
+.lad-cron-msgs {
+  margin: 0.35rem 0 0;
+  padding-left: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.lad-muted {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
