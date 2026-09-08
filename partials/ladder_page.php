@@ -45,7 +45,7 @@ $authed = ladderIsAuthed();
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=24">
-  <link rel="stylesheet" href="assets/ladder.css?v=10">
+  <link rel="stylesheet" href="assets/ladder.css?v=11">
 </head>
 <body class="lad-body<?= $isSim ? ' lad-sim' : '' ?>">
   <div class="bg-grid" aria-hidden="true"></div>
@@ -370,6 +370,6 @@ $authed = ladderIsAuthed();
     window.LADDER_MODE = <?= json_encode($mode) ?>;
     window.LADDER_AUTHED = <?= $authed ? 'true' : 'false' ?>;
   </script>
-  <script src="assets/ladder.js?v=10"></script>
+  <script src="assets/ladder.js?v=11"></script>
 </body>
 </html>

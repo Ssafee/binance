@@ -542,8 +542,12 @@
 
   async function deleteConfig(id) {
     if (!window.confirm('Remove this configuration?')) return;
+    var configs = (state.payload && state.payload.configs) || [];
+    var cfg = configs.filter(function (c) { return String(c.id) === String(id); })[0];
+    var body = { id: id };
+    if (cfg && cfg.symbol) body.symbol = cfg.symbol;
     try {
-      var data = await apiPost('config-delete', { id: id });
+      var data = await apiPost('config-delete', body);
       applyPayload(data);
       say(data.message || 'Removed.', 'good');
     } catch (err) {
@@ -552,7 +556,8 @@
           say(err.message, 'bad');
           return;
         }
-        var forced = await apiPost('config-delete', { id: id, force: true });
+        body.force = true;
+        var forced = await apiPost('config-delete', body);
         applyPayload(forced);
         say(forced.message || 'Removed.', 'good');
         return;

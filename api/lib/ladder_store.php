@@ -47,13 +47,16 @@ function ladderNewConfigId(): string
 }
 
 /**
+ * Template values for a new config form — does NOT invent a saved config.
+ *
  * @return array<string, mixed>
  */
 function ladderDefaultConfig(): array
 {
+    $symbol = strtoupper((string) env('LADDER_SYMBOL', 'ETHUSDT'));
     return [
-        'id' => ladderNewConfigId(),
-        'symbol' => strtoupper((string) env('LADDER_SYMBOL', 'ETHUSDT')),
+        'id' => 'C-' . strtolower($symbol),
+        'symbol' => $symbol,
         'dailyUsdt' => (float) env('LADDER_DAILY_USDT', '5'),
         'feePct' => (float) env('LADDER_FEE_PCT', '0.1'),
         'netProfitPct' => (float) env('LADDER_NET_PROFIT_PCT', '0.3'),
@@ -64,15 +67,15 @@ function ladderDefaultConfig(): array
 }
 
 /**
+ * Fresh state: no configs until the user saves one.
+ *
  * @return array<string, mixed>
  */
 function ladderDefaultState(): array
 {
-    $cfg = ladderDefaultConfig();
     return [
-        'configs' => [$cfg],
-        // Legacy mirror — kept so older callers reading state['config'] still work.
-        'config' => $cfg,
+        'configs' => [],
+        'config' => null,
         'simStartUsdt' => (float) env('LADDER_SIM_START_USDT', '100'),
         'entries' => [],
         'lastRunAt' => null,
@@ -87,24 +90,30 @@ function ladderDefaultState(): array
  */
 function ladderSanitizeConfig(array $raw): array
 {
-    $base = ladderDefaultConfig();
+    $defaults = [
+        'symbol' => strtoupper((string) env('LADDER_SYMBOL', 'ETHUSDT')),
+        'dailyUsdt' => (float) env('LADDER_DAILY_USDT', '5'),
+        'feePct' => (float) env('LADDER_FEE_PCT', '0.1'),
+        'netProfitPct' => (float) env('LADDER_NET_PROFIT_PCT', '0.3'),
+    ];
 
     $symbol = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($raw['symbol'] ?? '')) ?? '');
     if ($symbol === '' || strlen($symbol) > 20) {
-        $symbol = $base['symbol'];
+        $symbol = $defaults['symbol'];
     }
 
     $id = trim((string) ($raw['id'] ?? ''));
+    // Stable id when missing — random ids on every load broke delete ("Config not found").
     if ($id === '') {
-        $id = ladderNewConfigId();
+        $id = 'C-' . strtolower($symbol);
     }
 
     return [
         'id' => $id,
         'symbol' => $symbol,
-        'dailyUsdt' => max(0.0, (float) ($raw['dailyUsdt'] ?? $base['dailyUsdt'])),
-        'feePct' => max(0.0, (float) ($raw['feePct'] ?? $base['feePct'])),
-        'netProfitPct' => max(0.0, (float) ($raw['netProfitPct'] ?? $base['netProfitPct'])),
+        'dailyUsdt' => max(0.0, (float) ($raw['dailyUsdt'] ?? $defaults['dailyUsdt'])),
+        'feePct' => max(0.0, (float) ($raw['feePct'] ?? $defaults['feePct'])),
+        'netProfitPct' => max(0.0, (float) ($raw['netProfitPct'] ?? $defaults['netProfitPct'])),
         'autoBuyEnabled' => true,
         'autoSellEnabled' => true,
         'lastBuyDate' => isset($raw['lastBuyDate']) && $raw['lastBuyDate'] !== null
@@ -322,9 +331,8 @@ function ladderLoadState(string $mode): array
             $state['simStartUsdt'] = max(0.0, (float) $data['config']['simStartUsdt']);
         }
         $configs[] = $legacy;
-    } else {
-        $configs[] = ladderDefaultConfig();
     }
+    // else: leave configs empty — user has not saved any yet.
 
     // Deduplicate by symbol (keep first).
     $bySymbol = [];

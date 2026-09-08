@@ -226,12 +226,25 @@ if ($action === 'config-delete') {
         respond(405, ['ok' => false, 'error' => 'Use POST.']);
     }
     $id = (string) ($input['id'] ?? $input['configId'] ?? '');
-    if ($id === '') {
-        respond(400, ['ok' => false, 'error' => 'Provide config id.']);
-    }
+    $symbol = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', (string) ($input['symbol'] ?? '')) ?? '');
 
-    $cfg = ladderFindConfig($state, $id, null);
+    $cfg = $id !== '' ? ladderFindConfig($state, $id, null) : null;
+    if ($cfg === null && $symbol !== '') {
+        $cfg = ladderFindConfig($state, null, $symbol);
+    }
+    // Stale phantom id from an unsaved default — clear that symbol if present.
+    if ($cfg === null && $id !== '' && count(ladderConfigs($state)) === 1) {
+        $only = ladderConfigs($state)[0];
+        $cfg = $only;
+    }
     if ($cfg === null) {
+        // Nothing real to delete (already empty / never saved).
+        if (ladderConfigs($state) === []) {
+            $prices = ladderRequestPrices($mode, $state, $input);
+            respond(200, ladderPayload($mode, $state, $prices, $input, [
+                'message' => 'No configurations to remove.',
+            ]));
+        }
         respond(404, ['ok' => false, 'error' => 'Config not found.']);
     }
 
@@ -253,12 +266,12 @@ if ($action === 'config-delete') {
         ]);
     }
 
-    $state = ladderDeleteConfig($state, $id);
+    $state = ladderDeleteConfig($state, (string) $cfg['id']);
     ladderSaveState($mode, $state);
     $prices = ladderRequestPrices($mode, $state, $input);
     respond(200, ladderPayload($mode, $state, $prices, $input, [
         'message' => 'Removed config ' . $cfg['symbol'],
-        'deletedId' => $id,
+        'deletedId' => $cfg['id'],
     ]));
 }
 
