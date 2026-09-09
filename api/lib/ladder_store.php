@@ -78,6 +78,7 @@ function ladderDefaultState(): array
         'config' => null,
         'simStartUsdt' => (float) env('LADDER_SIM_START_USDT', '100'),
         'entries' => [],
+        'sellDustWait' => [],
         'lastRunAt' => null,
         'lastRunLog' => [],
         'updatedAt' => null,
@@ -362,6 +363,7 @@ function ladderLoadState(string $mode): array
         }
     }
     $state['entries'] = $entries;
+    $state['sellDustWait'] = is_array($data['sellDustWait'] ?? null) ? $data['sellDustWait'] : [];
     $state['lastRunAt'] = $data['lastRunAt'] ?? null;
     $state['lastRunLog'] = is_array($data['lastRunLog'] ?? null)
         ? array_slice($data['lastRunLog'], 0, 60)
@@ -369,6 +371,58 @@ function ladderLoadState(string $mode): array
     $state['updatedAt'] = $data['updatedAt'] ?? null;
 
     return $state;
+}
+
+/**
+ * Fingerprint of all OPEN lots for a symbol — changes when a new buy adds quantity.
+ */
+function ladderOpenFingerprint(array $state, string $symbol): string
+{
+    $symbol = strtoupper($symbol);
+    $parts = [];
+    foreach (ladderOpenEntries($state) as $entry) {
+        if ((string) $entry['symbol'] !== $symbol) {
+            continue;
+        }
+        $parts[] = (string) $entry['id'] . ':' . sprintf('%.8f', (float) $entry['qty']);
+    }
+    sort($parts);
+    return hash('sha256', implode('|', $parts));
+}
+
+function ladderClearSellDustWait(array &$state, ?string $symbol = null): void
+{
+    if (!isset($state['sellDustWait']) || !is_array($state['sellDustWait'])) {
+        $state['sellDustWait'] = [];
+    }
+    if ($symbol === null) {
+        $state['sellDustWait'] = [];
+        return;
+    }
+    unset($state['sellDustWait'][strtoupper($symbol)]);
+}
+
+function ladderMarkSellDustWait(array &$state, string $symbol): void
+{
+    $symbol = strtoupper($symbol);
+    if (!isset($state['sellDustWait']) || !is_array($state['sellDustWait'])) {
+        $state['sellDustWait'] = [];
+    }
+    $state['sellDustWait'][$symbol] = [
+        'fingerprint' => ladderOpenFingerprint($state, $symbol),
+        'since' => (int) round(microtime(true) * 1000),
+    ];
+}
+
+/** True when a prior run found dust too small and open lots have not changed since. */
+function ladderIsSellDustWaitActive(array $state, string $symbol): bool
+{
+    $symbol = strtoupper($symbol);
+    $wait = $state['sellDustWait'][$symbol] ?? null;
+    if (!is_array($wait) || empty($wait['fingerprint'])) {
+        return false;
+    }
+    return hash_equals((string) $wait['fingerprint'], ladderOpenFingerprint($state, $symbol));
 }
 
 /**

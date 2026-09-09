@@ -200,6 +200,9 @@ $state = ladderLoadState($mode);
 $configs = ladderConfigs($state);
 $prices = [];
 foreach (ladderSymbolsInState($state) as $symbol) {
+    if ($mode === 'live' && ladderIsSellDustWaitActive($state, $symbol)) {
+        continue;
+    }
     $priceRes = ladderPrice($symbol);
     if (!empty($priceRes['ok'])) {
         $prices[$symbol] = (float) $priceRes['price'];

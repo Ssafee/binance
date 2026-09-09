@@ -347,6 +347,7 @@ function ladderExecuteBuy(
         ]);
 
         $state['entries'][] = $entry;
+        ladderClearSellDustWait($state, $symbol);
         return ['ok' => true, 'entry' => $entry, 'price' => $price];
     }
 
@@ -432,6 +433,7 @@ function ladderExecuteBuy(
     ]);
 
     $state['entries'][] = $entry;
+    ladderClearSellDustWait($state, $symbol);
 
     // Mirror into the normal trade history so the main dashboard sees it too.
     appendTradeRecord(normalizeOrderRecord('BUY', $symbol, $body, 'ladder'));
@@ -848,6 +850,18 @@ function ladderSweepMaturedForSymbol(
     // Auto-sell is always on for ladder configs; ignoreToggle kept for API compatibility.
     unset($ignoreToggle);
 
+    // Already know qty is below Binance minimum — skip price/balance/order API until a new buy changes lots.
+    if ($mode === 'live' && ladderIsSellDustWaitActive($state, $symbol)) {
+        return [
+            'ok' => true,
+            'skipped' => true,
+            'waiting' => true,
+            'silent' => true,
+            'symbol' => $symbol,
+            'reason' => $symbol . ' leftover too small to sell alone — will join the next buy',
+        ];
+    }
+
     $ids = [];
     foreach (ladderOpenEntries($state) as $entry) {
         if ((string) $entry['symbol'] !== $symbol) {
@@ -871,6 +885,7 @@ function ladderSweepMaturedForSymbol(
     if (empty($res['ok'])) {
         // Dust leftover (below LOT_SIZE / NOTIONAL) — wait for the next daily buy to combine.
         if (!empty($res['tooSmall']) || !empty($res['belowNotional'])) {
+            ladderMarkSellDustWait($state, $symbol);
             return [
                 'ok' => true,
                 'skipped' => true,
@@ -886,6 +901,8 @@ function ladderSweepMaturedForSymbol(
             'candidates' => count($ids),
         ];
     }
+
+    ladderClearSellDustWait($state, $symbol);
 
     return [
         'ok' => true,
@@ -992,6 +1009,10 @@ function ladderRunPass(string $mode, array $opts = []): array
             if (isset($prices[$symbol]) && $prices[$symbol] > 0) {
                 continue;
             }
+            // Dust leftover waiting for the next buy — no Binance price call needed yet.
+            if (ladderIsSellDustWaitActive($state, $symbol)) {
+                continue;
+            }
             $live = ladderPrice($symbol);
             if (!empty($live['ok'])) {
                 $prices[$symbol] = (float) $live['price'];
@@ -1036,7 +1057,7 @@ function ladderRunPass(string $mode, array $opts = []): array
     } else {
         $waiting = [];
         foreach ($sweep['results'] ?? [] as $row) {
-            if (!empty($row['waiting']) && !empty($row['reason'])) {
+            if (!empty($row['waiting']) && !empty($row['reason']) && empty($row['silent'])) {
                 $waiting[] = $row['reason'];
             }
         }
