@@ -22,7 +22,8 @@
       <p>cPanel pe <strong>Server auto</strong> ON + cron → tab band bhi chalega. Local pe tab sirf UI ke liye.</p>
       <p class="brand-links">
         <a href="ladder.php">Daily ladder (buy daily, sell in profit)</a> ·
-        <a href="simulate.php">Simulator</a>
+        <a href="simulate.php">Simulator</a> ·
+        <a href="graph.php">Coin graph</a>
       </p>
     </header>
 

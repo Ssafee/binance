@@ -13,7 +13,7 @@
             "basePrice": 2494.38,
             "holding": false,
             "addedAt": 1786109668531,
-            "lastSignal": "WAIT",
+            "lastSignal": "BUY",
             "lastActionAt": null,
             "lastError": null
         },
@@ -30,5 +30,5 @@
     "lastRunAt": null,
     "lastRunOk": null,
     "lastRunLog": [],
-    "updatedAt": 1788860599455
+    "updatedAt": 1788951326424
 }

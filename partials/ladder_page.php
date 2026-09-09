@@ -67,6 +67,7 @@ $authed = ladderIsAuthed();
       <nav class="lad-nav">
         <a href="index.php">← Main dashboard</a>
         <a href="<?= $other ?>"><?= $otherLabel ?></a>
+        <a href="graph.php">Coin graph</a>
         <a href="cron-log.php">Cron log</a>
         <?php if ($authed): ?>
           <a class="lad-nav-out" href="<?= $self ?>?logout=1">Sign out</a>

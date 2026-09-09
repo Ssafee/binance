@@ -269,4 +269,79 @@ if ($action === 'hour' || $action === 'move') {
     ]);
 }
 
+if ($action === 'history' || $action === 'daily') {
+    $symbol = sanitizeSymbol((string) ($_GET['symbol'] ?? ''));
+    $days = (int) ($_GET['days'] ?? 30);
+    if ($days < 7) {
+        $days = 7;
+    }
+    if ($days > 90) {
+        $days = 90;
+    }
+
+    $rows = binanceGet('/api/v3/klines', [
+        'symbol' => $symbol,
+        'interval' => '1d',
+        'limit' => $days,
+    ]);
+
+    if (!is_array($rows) || $rows === []) {
+        respond(502, ['ok' => false, 'error' => 'No daily candle data for ' . $symbol . '.']);
+    }
+
+    $candles = [];
+    foreach ($rows as $candle) {
+        if (!is_array($candle) || count($candle) < 6) {
+            continue;
+        }
+        $openTime = (int) ($candle[0] ?? 0);
+        $open = (float) ($candle[1] ?? 0);
+        $high = (float) ($candle[2] ?? 0);
+        $low = (float) ($candle[3] ?? 0);
+        $close = (float) ($candle[4] ?? 0);
+        $volume = (float) ($candle[5] ?? 0);
+        if ($open <= 0 || $close <= 0) {
+            continue;
+        }
+        $candles[] = [
+            'time' => (int) floor($openTime / 1000),
+            'date' => gmdate('Y-m-d', (int) floor($openTime / 1000)),
+            'open' => $open,
+            'high' => $high,
+            'low' => $low,
+            'close' => $close,
+            'volume' => $volume,
+            'changePct' => (($close - $open) / $open) * 100,
+        ];
+    }
+
+    if ($candles === []) {
+        respond(502, ['ok' => false, 'error' => 'Invalid candle data from Binance.']);
+    }
+
+    $first = $candles[0];
+    $last = $candles[count($candles) - 1];
+    $periodHigh = max(array_column($candles, 'high'));
+    $periodLow = min(array_column($candles, 'low'));
+    $periodChangePct = $first['open'] > 0
+        ? (($last['close'] - $first['open']) / $first['open']) * 100
+        : 0.0;
+
+    respond(200, [
+        'ok' => true,
+        'symbol' => $symbol,
+        'interval' => '1d',
+        'days' => count($candles),
+        'from' => $first['date'],
+        'to' => $last['date'],
+        'open' => $first['open'],
+        'close' => $last['close'],
+        'high' => $periodHigh,
+        'low' => $periodLow,
+        'changePct' => $periodChangePct,
+        'candles' => $candles,
+        'ts' => (int) round(microtime(true) * 1000),
+    ]);
+}
+
 respond(400, ['ok' => false, 'error' => 'Unknown action.']);
