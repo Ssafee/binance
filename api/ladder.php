@@ -254,24 +254,25 @@ if ($action === 'config-delete') {
             $openForSymbol++;
         }
     }
-    if ($openForSymbol > 0 && empty($input['force'])) {
-        respond(400, [
-            'ok' => false,
-            'error' => sprintf(
-                '%s still has %d open entries. Sell them first, or confirm force-delete.',
-                $cfg['symbol'],
-                $openForSymbol
-            ),
-            'openEntries' => $openForSymbol,
-        ]);
-    }
 
     $state = ladderDeleteConfig($state, (string) $cfg['id']);
     ladderSaveState($mode, $state);
     $prices = ladderRequestPrices($mode, $state, $input);
+
+    $message = 'Removed config ' . $cfg['symbol'];
+    if ($openForSymbol > 0) {
+        $message .= sprintf(
+            '. %d open %s entr%s kept — no more daily buys; cron still sells at target.',
+            $openForSymbol,
+            $cfg['symbol'],
+            $openForSymbol === 1 ? 'y' : 'ies'
+        );
+    }
+
     respond(200, ladderPayload($mode, $state, $prices, $input, [
-        'message' => 'Removed config ' . $cfg['symbol'],
+        'message' => $message,
         'deletedId' => $cfg['id'],
+        'openEntriesKept' => $openForSymbol,
     ]));
 }
 

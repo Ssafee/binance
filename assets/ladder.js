@@ -551,29 +551,26 @@
   }
 
   async function deleteConfig(id) {
-    if (!window.confirm('Remove this configuration?')) return;
     var configs = (state.payload && state.payload.configs) || [];
     var cfg = configs.filter(function (c) { return String(c.id) === String(id); })[0];
+    var openForSymbol = 0;
+    if (cfg && cfg.symbol) {
+      var sym = cfg.symbol;
+      openForSymbol = ((state.payload && state.payload.page && state.payload.page.rows) || [])
+        .filter(function (e) { return e.status === 'OPEN' && e.symbol === sym; }).length;
+    }
+    var msg = openForSymbol > 0
+      ? 'Remove ' + (cfg ? cfg.symbol : 'this') + ' config?\n\n'
+        + openForSymbol + ' open holding(s) will stay in the table.\n'
+        + 'No more daily buys for this coin — cron still sells when target is hit.'
+      : 'Remove this configuration?';
+    if (!window.confirm(msg)) return;
+
     var body = { id: id };
     if (cfg && cfg.symbol) body.symbol = cfg.symbol;
-    try {
-      var data = await apiPost('config-delete', body);
-      applyPayload(data);
-      say(data.message || 'Removed.', 'good');
-    } catch (err) {
-      if (err.data && err.data.openEntries) {
-        if (!window.confirm(err.message + '\n\nForce delete anyway? (open entries stay in history)')) {
-          say(err.message, 'bad');
-          return;
-        }
-        body.force = true;
-        var forced = await apiPost('config-delete', body);
-        applyPayload(forced);
-        say(forced.message || 'Removed.', 'good');
-        return;
-      }
-      throw err;
-    }
+    var data = await apiPost('config-delete', body);
+    applyPayload(data);
+    say(data.message || 'Removed.', 'good');
   }
 
   async function sellEntry(id, row) {
