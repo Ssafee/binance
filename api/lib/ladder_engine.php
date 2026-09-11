@@ -732,29 +732,73 @@ function ladderDailyBuyForConfig(
     string $mode,
     array &$state,
     array $config,
-    ?float $priceOverride = null
+    ?float $priceOverride = null,
+    bool $afterSell = false
 ): array {
     $config = ladderSanitizeConfig($config);
     $symbol = (string) $config['symbol'];
     $today = binanceTodayDate();
+    $multi = !empty($config['multiBuyEnabled']);
 
-    if ((string) $config['lastBuyDate'] === $today) {
-        return [
-            'ok' => true,
-            'skipped' => true,
-            'symbol' => $symbol,
-            'reason' => $symbol . ' already bought this Binance day (' . $today . ' UTC)',
-        ];
-    }
+    if ($multi) {
+        ladderConfigSyncBuyDay($config);
+        ladderConfigRefreshCycle($state, $config);
+        ladderUpdateConfigInState($state, $config);
 
-    // Do not buy mid-day just because a config was saved. Wait for UTC midnight.
-    if (!ladderIsUtcBuyWindow()) {
-        return [
-            'ok' => true,
-            'skipped' => true,
-            'symbol' => $symbol,
-            'reason' => $symbol . ' waiting for UTC buy window (00:00–01:59). Next: ' . ladderNextUtcMidnight(),
-        ];
+        $buysToday = (int) ($config['buysToday'] ?? 0);
+        $buysPerDay = max(1, (int) ($config['buysPerDay'] ?? 1));
+
+        if ($buysToday >= $buysPerDay) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'symbol' => $symbol,
+                'reason' => sprintf(
+                    '%s daily buy limit reached (%d/%d for %s UTC)',
+                    $symbol,
+                    $buysToday,
+                    $buysPerDay,
+                    $today
+                ),
+            ];
+        }
+
+        if (ladderConfigCycleBlocksBuy($state, $config)) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'symbol' => $symbol,
+                'reason' => $symbol . ' waiting for current cycle to sell before next buy',
+            ];
+        }
+
+        // First buy of the day: UTC window (unless this run just sold and freed the slot).
+        if ($buysToday === 0 && !$afterSell && !ladderIsUtcBuyWindow()) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'symbol' => $symbol,
+                'reason' => $symbol . ' waiting for UTC buy window (00:00–01:59). Next: ' . ladderNextUtcMidnight(),
+            ];
+        }
+    } else {
+        if ((string) $config['lastBuyDate'] === $today) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'symbol' => $symbol,
+                'reason' => $symbol . ' already bought this Binance day (' . $today . ' UTC)',
+            ];
+        }
+
+        if (!ladderIsUtcBuyWindow()) {
+            return [
+                'ok' => true,
+                'skipped' => true,
+                'symbol' => $symbol,
+                'reason' => $symbol . ' waiting for UTC buy window (00:00–01:59). Next: ' . ladderNextUtcMidnight(),
+            ];
+        }
     }
 
     $usdt = (float) $config['dailyUsdt'];
@@ -764,22 +808,34 @@ function ladderDailyBuyForConfig(
 
     $res = ladderExecuteBuy($mode, $state, $usdt, 'auto', $priceOverride, $config);
     if (!empty($res['ok'])) {
-        // Persist lastBuyDate on this config inside state.configs
-        foreach ($state['configs'] as $i => $row) {
-            if ((string) $row['id'] === (string) $config['id']) {
-                $state['configs'][$i]['lastBuyDate'] = $today;
-                break;
+        $entryId = (string) ($res['entry']['id'] ?? '');
+        if ($multi && $entryId !== '') {
+            ladderConfigRecordAutoBuy($config, $entryId);
+            ladderUpdateConfigInState($state, $config);
+        } else {
+            foreach ($state['configs'] as $i => $row) {
+                if ((string) $row['id'] === (string) $config['id']) {
+                    $state['configs'][$i]['lastBuyDate'] = $today;
+                    break;
+                }
             }
+            $state['config'] = $state['configs'][0] ?? $config;
         }
-        $state['config'] = $state['configs'][0] ?? $config;
+
+        $buyNum = $multi ? (int) ($config['buysToday'] ?? 1) : 1;
+        $buyLabel = $multi
+            ? sprintf('buy %d/%d', $buyNum, max(1, (int) ($config['buysPerDay'] ?? 1)))
+            : 'daily buy';
+
         return [
             'ok' => true,
             'bought' => true,
             'symbol' => $symbol,
             'entry' => $res['entry'],
             'msg' => sprintf(
-                '%s daily buy %.2f USDT @ %s (Binance day %s UTC)',
+                '%s %s %.2f USDT @ %s (Binance day %s UTC)',
                 $symbol,
+                $buyLabel,
                 $usdt,
                 $res['entry']['buyPrice'],
                 $today
@@ -801,7 +857,7 @@ function ladderDailyBuyForConfig(
  * @param array<string, float> $prices
  * @return array<string, mixed>
  */
-function ladderDailyBuyAll(string $mode, array &$state, array $prices = []): array
+function ladderDailyBuyAll(string $mode, array &$state, array $prices = [], bool $afterSell = false): array
 {
     $results = [];
     $bought = 0;
@@ -810,7 +866,7 @@ function ladderDailyBuyAll(string $mode, array &$state, array $prices = []): arr
     foreach (ladderConfigs($state) as $config) {
         $symbol = (string) $config['symbol'];
         $price = $prices[$symbol] ?? null;
-        $res = ladderDailyBuyForConfig($mode, $state, $config, $price);
+        $res = ladderDailyBuyForConfig($mode, $state, $config, $price, $afterSell);
         $results[] = $res;
         if (!empty($res['bought'])) {
             $bought++;
@@ -827,6 +883,29 @@ function ladderDailyBuyAll(string $mode, array &$state, array $prices = []): arr
         'error' => $errors[0] ?? null,
         'errors' => $errors,
     ];
+}
+
+/**
+ * After a sell, try the next multi-buy cycle for configs that just freed a slot.
+ *
+ * @param array<string, mixed> $state
+ * @param array<string, float> $prices
+ * @return array<string, mixed>
+ */
+function ladderFollowUpMultiBuy(string $mode, array &$state, array $prices): array
+{
+    $anyMulti = false;
+    foreach (ladderConfigs($state) as $cfg) {
+        if (!empty($cfg['multiBuyEnabled'])) {
+            $anyMulti = true;
+            break;
+        }
+    }
+    if (!$anyMulti) {
+        return ['ok' => true, 'bought' => 0, 'results' => []];
+    }
+
+    return ladderDailyBuyAll($mode, $state, $prices, true);
 }
 
 /**
@@ -1044,6 +1123,18 @@ function ladderRunPass(string $mode, array $opts = []): array
         foreach ($sweep['results'] as $row) {
             if (!empty($row['msg'])) {
                 $log[] = ['t' => $nowMs, 'msg' => $row['msg']];
+            }
+        }
+
+        $followUp = ladderFollowUpMultiBuy($mode, $state, $prices);
+        foreach ($followUp['results'] ?? [] as $row) {
+            if (!empty($row['bought'])) {
+                $actions++;
+                $log[] = ['t' => $nowMs, 'msg' => $row['msg']];
+            } elseif (!empty($row['error'])) {
+                $log[] = ['t' => $nowMs, 'msg' => 'Follow-up buy failed: ' . $row['error']];
+            } elseif (!empty($row['skipped']) && !empty($row['reason'])) {
+                $log[] = ['t' => $nowMs, 'msg' => 'Follow-up buy skipped — ' . $row['reason']];
             }
         }
     } elseif (!empty($sweep['error'])) {

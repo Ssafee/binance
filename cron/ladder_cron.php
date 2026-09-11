@@ -100,6 +100,18 @@ if ($isDry) {
     $today = binanceTodayDate();
     $due = [];
     foreach ($configs as $cfg) {
+        $cfg = ladderSanitizeConfig($cfg);
+        if (!empty($cfg['multiBuyEnabled'])) {
+            ladderConfigSyncBuyDay($cfg);
+            if ((int) ($cfg['buysToday'] ?? 0) < (int) ($cfg['buysPerDay'] ?? 1)
+                && !ladderConfigCycleBlocksBuy($state, $cfg)
+                && (((int) ($cfg['buysToday'] ?? 0) === 0 && ladderIsUtcBuyWindow())
+                    || ((int) ($cfg['buysToday'] ?? 0) > 0))
+            ) {
+                $due[] = $cfg['symbol'];
+            }
+            continue;
+        }
         if ((string) $cfg['lastBuyDate'] !== $today && ladderIsUtcBuyWindow()) {
             $due[] = $cfg['symbol'];
         }

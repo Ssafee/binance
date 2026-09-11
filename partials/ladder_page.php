@@ -45,7 +45,7 @@ $authed = ladderIsAuthed();
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=IBM+Plex+Mono:wght@500;600&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/style.css?v=24">
-  <link rel="stylesheet" href="assets/ladder.css?v=12">
+  <link rel="stylesheet" href="assets/ladder.css?v=13">
 </head>
 <body class="lad-body<?= $isSim ? ' lad-sim' : '' ?>">
   <div class="bg-grid" aria-hidden="true"></div>
@@ -154,7 +154,8 @@ $authed = ladderIsAuthed();
               <th>Amount/day</th>
               <th>Fee %</th>
               <th>Target %</th>
-              <th>Last buy day</th>
+              <th>Multi-buy</th>
+              <th>Buys today</th>
 <?php if ($isSim): ?>
               <th>Test price</th>
 <?php endif; ?>
@@ -162,7 +163,7 @@ $authed = ladderIsAuthed();
             </tr>
           </thead>
           <tbody id="lad-config-rows">
-            <tr><td colspan="<?= $isSim ? 7 : 6 ?>" class="lad-empty">Loading…</td></tr>
+            <tr><td colspan="<?= $isSim ? 8 : 7 ?>" class="lad-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -193,6 +194,17 @@ $authed = ladderIsAuthed();
         <label class="lad-field">
           <span>Net profit target (%)</span>
           <input id="cfg-profit" type="number" step="0.01" min="0" placeholder="0.3" value="0.3">
+        </label>
+        <label class="lad-field">
+          <span>Multi-buy per day</span>
+          <span class="lad-check">
+            <input id="cfg-multi-buy" type="checkbox">
+            After each sell, buy again until daily limit (UTC day)
+          </span>
+        </label>
+        <label class="lad-field" id="cfg-buys-wrap">
+          <span>Buys per day (when multi-buy on)</span>
+          <input id="cfg-buys-per-day" type="number" step="1" min="1" max="24" value="1">
         </label>
 <?php if ($isSim): ?>
         <label class="lad-field">
@@ -373,6 +385,6 @@ $authed = ladderIsAuthed();
     window.LADDER_MODE = <?= json_encode($mode) ?>;
     window.LADDER_AUTHED = <?= $authed ? 'true' : 'false' ?>;
   </script>
-  <script src="assets/ladder.js?v=16"></script>
+  <script src="assets/ladder.js?v=17"></script>
 </body>
 </html>

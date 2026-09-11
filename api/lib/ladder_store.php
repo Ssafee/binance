@@ -62,7 +62,12 @@ function ladderDefaultConfig(): array
         'netProfitPct' => (float) env('LADDER_NET_PROFIT_PCT', '0.3'),
         'autoBuyEnabled' => true,
         'autoSellEnabled' => true,
+        'multiBuyEnabled' => false,
+        'buysPerDay' => 1,
         'lastBuyDate' => null,
+        'buyDay' => null,
+        'buysToday' => 0,
+        'cycleEntryId' => null,
     ];
 }
 
@@ -117,8 +122,17 @@ function ladderSanitizeConfig(array $raw): array
         'netProfitPct' => max(0.0, (float) ($raw['netProfitPct'] ?? $defaults['netProfitPct'])),
         'autoBuyEnabled' => true,
         'autoSellEnabled' => true,
+        'multiBuyEnabled' => !empty($raw['multiBuyEnabled']),
+        'buysPerDay' => max(1, min(24, (int) ($raw['buysPerDay'] ?? 1))),
         'lastBuyDate' => isset($raw['lastBuyDate']) && $raw['lastBuyDate'] !== null
             ? (string) $raw['lastBuyDate']
+            : null,
+        'buyDay' => isset($raw['buyDay']) && $raw['buyDay'] !== null && $raw['buyDay'] !== ''
+            ? (string) $raw['buyDay']
+            : null,
+        'buysToday' => max(0, (int) ($raw['buysToday'] ?? 0)),
+        'cycleEntryId' => isset($raw['cycleEntryId']) && $raw['cycleEntryId'] !== null && $raw['cycleEntryId'] !== ''
+            ? (string) $raw['cycleEntryId']
             : null,
     ];
 }
@@ -198,10 +212,13 @@ function ladderUpsertConfig(array $state, array $config): array
         if ((string) $existing['id'] === (string) $config['id']
             || (string) $existing['symbol'] === (string) $config['symbol']
         ) {
-            // Preserve lastBuyDate unless the caller explicitly set one.
+            // Preserve runtime counters unless the caller explicitly set them.
             if ($config['lastBuyDate'] === null) {
                 $config['lastBuyDate'] = $existing['lastBuyDate'];
             }
+            $config['buyDay'] = $existing['buyDay'] ?? null;
+            $config['buysToday'] = (int) ($existing['buysToday'] ?? 0);
+            $config['cycleEntryId'] = $existing['cycleEntryId'] ?? null;
             // Keep stable id when matching by symbol.
             $config['id'] = $existing['id'];
             $configs[$i] = $config;
@@ -216,7 +233,9 @@ function ladderUpsertConfig(array $state, array $config): array
             if ((string) $existing['symbol'] === (string) $config['symbol']) {
                 $config['id'] = $existing['id'];
                 $config['lastBuyDate'] = $existing['lastBuyDate'];
-                // replace
+                $config['buyDay'] = $existing['buyDay'] ?? null;
+                $config['buysToday'] = (int) ($existing['buysToday'] ?? 0);
+                $config['cycleEntryId'] = $existing['cycleEntryId'] ?? null;
             }
         }
         $replaced = false;
@@ -437,8 +456,95 @@ function ladderSymbolHasOpenEntries(array $state, string $symbol): bool
 }
 
 /**
- * @return list<string> Entry ids that have reached target at the given price.
+ * Reset per-day buy counter when the Binance UTC day rolls over.
+ *
+ * @param array<string, mixed> $config
  */
+function ladderConfigSyncBuyDay(array &$config): void
+{
+    $today = binanceTodayDate();
+    if ((string) ($config['buyDay'] ?? '') !== $today) {
+        $config['buyDay'] = $today;
+        $config['buysToday'] = 0;
+    }
+}
+
+/**
+ * @param array<string, mixed> $state
+ * @param array<string, mixed> $config
+ */
+function ladderConfigFindEntry(array $state, array $config, ?string $entryId = null): ?array
+{
+    $entryId = $entryId ?? ($config['cycleEntryId'] ?? null);
+    if ($entryId === null || $entryId === '') {
+        return null;
+    }
+    foreach ($state['entries'] as $entry) {
+        if ((string) $entry['id'] === (string) $entryId) {
+            return $entry;
+        }
+    }
+    return null;
+}
+
+/** Clear cycle lock when the tracked entry is gone or already sold. */
+function ladderConfigRefreshCycle(array $state, array &$config): void
+{
+    $entryId = (string) ($config['cycleEntryId'] ?? '');
+    if ($entryId === '') {
+        return;
+    }
+    $entry = ladderConfigFindEntry($state, $config, $entryId);
+    if ($entry === null || ($entry['status'] ?? '') === 'SOLD') {
+        $config['cycleEntryId'] = null;
+    }
+}
+
+/** True while the current multi-buy cycle entry is still open. */
+function ladderConfigCycleBlocksBuy(array $state, array $config): bool
+{
+    if (empty($config['multiBuyEnabled'])) {
+        return false;
+    }
+    $config = ladderSanitizeConfig($config);
+    ladderConfigRefreshCycle($state, $config);
+    $entryId = (string) ($config['cycleEntryId'] ?? '');
+    if ($entryId === '') {
+        return false;
+    }
+    $entry = ladderConfigFindEntry($state, $config, $entryId);
+    return $entry !== null && ($entry['status'] ?? '') === 'OPEN';
+}
+
+/**
+ * @param array<string, mixed> $config
+ */
+function ladderConfigRecordAutoBuy(array &$config, string $entryId): void
+{
+    $today = binanceTodayDate();
+    ladderConfigSyncBuyDay($config);
+    $config['buysToday'] = (int) ($config['buysToday'] ?? 0) + 1;
+    $config['buyDay'] = $today;
+    $config['lastBuyDate'] = $today;
+    $config['cycleEntryId'] = $entryId;
+}
+
+/**
+ * @param array<string, mixed> $state
+ */
+function ladderUpdateConfigInState(array &$state, array $config): void
+{
+    $config = ladderSanitizeConfig($config);
+    foreach ($state['configs'] as $i => $row) {
+        if ((string) $row['id'] === (string) $config['id']) {
+            $state['configs'][$i] = $config;
+            $state['config'] = $state['configs'][0] ?? $config;
+            return;
+        }
+    }
+}
+
+/** @return list<string> Entry ids that have reached target at the given price. */
 function ladderMaturedEntryIds(array $state, string $symbol, float $price): array
 {
     if ($price <= 0) {
@@ -724,6 +830,19 @@ function ladderDashboard(array $state, array|float $prices): array
     $today = binanceTodayDate();
     $anyDue = false;
     foreach (ladderConfigs($state) as $cfg) {
+        $cfg = ladderSanitizeConfig($cfg);
+        if (!empty($cfg['multiBuyEnabled'])) {
+            ladderConfigSyncBuyDay($cfg);
+            if ((int) ($cfg['buysToday'] ?? 0) < (int) ($cfg['buysPerDay'] ?? 1)
+                && !ladderConfigCycleBlocksBuy($state, $cfg)
+                && (((int) ($cfg['buysToday'] ?? 0) === 0 && ladderIsUtcBuyWindow())
+                    || ((int) ($cfg['buysToday'] ?? 0) > 0))
+            ) {
+                $anyDue = true;
+                break;
+            }
+            continue;
+        }
         if ((string) $cfg['lastBuyDate'] !== $today && ladderIsUtcBuyWindow()) {
             $anyDue = true;
             break;

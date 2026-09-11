@@ -192,10 +192,13 @@
       ? (configs.length + ' coin(s): ' + configs.map(function (c) { return c.symbol; }).join(', '))
       : 'No configs yet';
 
+    var cfgCols = IS_SIM ? 8 : 7;
     if (!configs.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="lad-empty">No configurations yet. Add one below.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + cfgCols + '" class="lad-empty">No configurations yet. Add one below.</td></tr>';
       return;
     }
+
+    var todayUtc = (state.payload && state.payload.dashboard && state.payload.dashboard.today) || '';
 
     tbody.innerHTML = configs.map(function (cfg) {
       var price = priceFor(cfg.symbol);
@@ -203,13 +206,18 @@
         ? '<input class="lad-price-input" data-cfg-price="' + esc(cfg.symbol) + '" type="number" step="any" min="0" value="' +
           (price > 0 ? esc(trimNum(price, 8)) : '') + '" placeholder="test price">'
         : fmtPrice(price);
+      var multi = cfg.multiBuyEnabled ? 'On (' + esc(cfg.buysPerDay || 1) + '/day)' : 'Off';
+      var buysToday = cfg.multiBuyEnabled
+        ? ((cfg.buyDay === todayUtc ? (cfg.buysToday || 0) : 0) + '/' + (cfg.buysPerDay || 1))
+        : (cfg.lastBuyDate === todayUtc ? '1/1' : '0/1');
 
       return '<tr>' +
         '<td><strong>' + esc(cfg.symbol) + '</strong></td>' +
         '<td>' + fmtUsd(cfg.dailyUsdt) + '</td>' +
         '<td>' + esc(cfg.feePct) + '</td>' +
         '<td>' + esc(cfg.netProfitPct) + '</td>' +
-        '<td>' + (cfg.lastBuyDate ? esc(cfg.lastBuyDate) + ' UTC' : '—') + '</td>' +
+        '<td>' + multi + '</td>' +
+        '<td>' + esc(buysToday) + '</td>' +
         (IS_SIM ? '<td>' + priceCell + '</td>' : '') +
         '<td class="lad-col-act">' +
           '<button type="button" class="lad-row-btn" data-cfg-buy="' + esc(cfg.id) + '">Buy</button> ' +
@@ -253,12 +261,22 @@
     }).join('');
   }
 
+  function syncMultiBuyForm() {
+    var on = $('cfg-multi-buy') && $('cfg-multi-buy').checked;
+    var wrap = $('cfg-buys-wrap');
+    if (wrap) wrap.style.opacity = on ? '1' : '0.45';
+    if ($('cfg-buys-per-day')) $('cfg-buys-per-day').disabled = !on;
+  }
+
   function clearConfigForm() {
     $('cfg-id').value = '';
     $('cfg-symbol').value = '';
     $('cfg-daily').value = '';
     $('cfg-fee').value = '0.1';
     $('cfg-profit').value = '0.3';
+    if ($('cfg-multi-buy')) $('cfg-multi-buy').checked = false;
+    if ($('cfg-buys-per-day')) $('cfg-buys-per-day').value = '1';
+    syncMultiBuyForm();
     if ($('cfg-form-title')) $('cfg-form-title').textContent = 'Add configuration';
   }
 
@@ -271,6 +289,9 @@
     $('cfg-daily').value = cfg.dailyUsdt;
     $('cfg-fee').value = cfg.feePct;
     $('cfg-profit').value = cfg.netProfitPct;
+    if ($('cfg-multi-buy')) $('cfg-multi-buy').checked = !!cfg.multiBuyEnabled;
+    if ($('cfg-buys-per-day')) $('cfg-buys-per-day').value = cfg.buysPerDay || 1;
+    syncMultiBuyForm();
     if ($('cfg-form-title')) $('cfg-form-title').textContent = 'Edit ' + cfg.symbol;
     $('cfg-symbol').focus();
   }
@@ -509,6 +530,8 @@
         dailyUsdt: $('cfg-daily').value,
         feePct: $('cfg-fee').value,
         netProfitPct: $('cfg-profit').value,
+        multiBuyEnabled: !!($('cfg-multi-buy') && $('cfg-multi-buy').checked),
+        buysPerDay: $('cfg-buys-per-day') ? $('cfg-buys-per-day').value : 1,
         autoBuyEnabled: true,
         autoSellEnabled: true
       }
@@ -651,6 +674,10 @@
 
     $('cfg-save').addEventListener('click', doSaveConfig);
     if ($('cfg-clear')) $('cfg-clear').addEventListener('click', clearConfigForm);
+    if ($('cfg-multi-buy')) {
+      $('cfg-multi-buy').addEventListener('change', syncMultiBuyForm);
+      syncMultiBuyForm();
+    }
     $('act-sell-matured').addEventListener('click', doSellMatured);
     $('act-run').addEventListener('click', doRun);
     $('act-refresh').addEventListener('click', withBusy(function () { return reload('Refreshed.'); }));
