@@ -425,6 +425,38 @@ function ladderIsSellDustWaitActive(array $state, string $symbol): bool
     return hash_equals((string) $wait['fingerprint'], ladderOpenFingerprint($state, $symbol));
 }
 
+function ladderSymbolHasOpenEntries(array $state, string $symbol): bool
+{
+    $symbol = strtoupper($symbol);
+    foreach (ladderOpenEntries($state) as $entry) {
+        if ((string) $entry['symbol'] === $symbol) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * @return list<string> Entry ids that have reached target at the given price.
+ */
+function ladderMaturedEntryIds(array $state, string $symbol, float $price): array
+{
+    if ($price <= 0) {
+        return [];
+    }
+    $symbol = strtoupper($symbol);
+    $ids = [];
+    foreach (ladderOpenEntries($state) as $entry) {
+        if ((string) $entry['symbol'] !== $symbol) {
+            continue;
+        }
+        if ((float) $entry['targetPrice'] > 0 && $price + 1e-12 >= (float) $entry['targetPrice']) {
+            $ids[] = (string) $entry['id'];
+        }
+    }
+    return $ids;
+}
+
 /**
  * @param array<string, mixed> $state
  */
