@@ -170,6 +170,22 @@ if ($action === 'state' || $action === 'entries') {
     respond(200, ladderPayload($mode, $state, $prices, $input));
 }
 
+if ($action === 'export-entries') {
+    $prices = ladderRequestPrices($mode, $state, $input);
+    $status = (string) ($_GET['status'] ?? $input['status'] ?? '');
+    $symbolFilter = (string) ($_GET['symbolFilter'] ?? $input['symbolFilter'] ?? '');
+    $rows = ladderFilterEntries($state, $prices, $status, $symbolFilter);
+    respond(200, [
+        'ok' => true,
+        'mode' => $mode,
+        'total' => count($rows),
+        'status' => $status !== '' ? strtoupper($status) : 'ALL',
+        'symbol' => $symbolFilter !== '' ? strtoupper($symbolFilter) : 'ALL',
+        'rows' => $rows,
+        'exportedAt' => gmdate('Y-m-d H:i:s') . ' UTC',
+    ]);
+}
+
 /* ---------------- config upsert / delete ---------------- */
 
 if ($action === 'config-save' || $action === 'config-upsert') {

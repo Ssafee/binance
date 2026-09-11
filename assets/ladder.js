@@ -73,6 +73,13 @@
     return new Date(num(ms)).toLocaleString();
   }
 
+  function fmtDateTimeUtc(ms) {
+    if (!ms) return '—';
+    var d = new Date(num(ms));
+    if (isNaN(d.getTime())) return '—';
+    return d.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
+  }
+
   function say(message, kind) {
     var el = $('lad-status');
     if (!el) return;
@@ -421,9 +428,14 @@
           '" data-sell="' + esc(row.id) + '">' + (matured ? 'Sell now' : 'Sell') + '</button>' +
           (IS_SIM ? ' <button type="button" class="lad-row-btn lad-row-btn-del" data-del="' + esc(row.id) + '">✕</button>' : '');
 
+      var boughtCell = '<strong>' + esc(fmtDateTimeUtc(row.buyAt)) + '</strong><br><small>' + esc(row.symbol) +
+        (leftover ? ' · leftover' : '') + '</small>';
+      if (isSold && row.sellAt) {
+        boughtCell += '<br><small>Sold ' + esc(fmtDateTimeUtc(row.sellAt)) + '</small>';
+      }
+
       return '<tr class="' + cls + '">' +
-        '<td>' + esc(row.buyDate) + '<br><small>' + esc(row.symbol) +
-          (leftover ? ' · leftover' : '') + '</small></td>' +
+        '<td>' + boughtCell + '</td>' +
         '<td>' + fmtPrice(row.buyPrice) + '</td>' +
         '<td>' + trimNum(row.qty, 8) + '</td>' +
         '<td>' + fmtUsd(row.costUsdt) + '</td>' +
@@ -514,6 +526,84 @@
     var data = await apiGet('state');
     applyPayload(data);
     if (message) say(message, 'good');
+  }
+
+  function csvCell(value) {
+    var s = value === null || value === undefined ? '' : String(value);
+    if (/[",\n\r]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function entryExportRow(row) {
+    var isSold = row.status === 'SOLD';
+    var leftover = !isSold && String(row.note || '').indexOf('Remainder') >= 0;
+    var status = isSold ? 'SOLD' : (leftover ? 'LEFTOVER' : (row.matured ? 'READY' : 'HOLDING'));
+    return [
+      row.id,
+      row.symbol,
+      fmtDateTimeUtc(row.buyAt),
+      row.buyDate || '',
+      row.buyPrice,
+      row.qty,
+      row.costUsdt,
+      row.targetPrice,
+      row.targetUsdt,
+      isSold ? fmtDateTimeUtc(row.sellAt) : '',
+      isSold ? row.sellPrice : '',
+      isSold ? row.proceedsUsdt : row.nowValueUsdt,
+      isSold ? row.profitUsdt : row.nowProfitUsdt,
+      isSold ? row.profitPct : row.nowProfitPct,
+      status,
+      row.sellReason || '',
+      row.source || '',
+      row.note || ''
+    ];
+  }
+
+  function downloadCsv(filename, headers, rows) {
+    var lines = [headers.map(csvCell).join(',')];
+    rows.forEach(function (row) {
+      lines.push(row.map(csvCell).join(','));
+    });
+    var blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportAllEntries() {
+    say('Preparing export…');
+    var data = IS_SIM ? await apiPost('export-entries', {}) : await apiGet('export-entries');
+    var rows = (data.rows || []).map(function (row) {
+      return reprice(row, priceFor(row.symbol));
+    });
+    if (!rows.length) {
+      say('Nothing to export for the current filter.', 'bad');
+      return;
+    }
+
+    var headers = [
+      'ID', 'Symbol', 'Buy time (UTC)', 'Buy day (UTC)', 'Buy price', 'Qty', 'Cost USDT',
+      'Target price', 'Target USDT', 'Sell time (UTC)', 'Sell price', 'Value USDT',
+      'Profit USDT', 'Profit %', 'Status', 'Sell reason', 'Source', 'Note'
+    ];
+    var stamp = new Date().toISOString().slice(0, 10);
+    var modeLabel = IS_SIM ? 'sim' : 'live';
+    var filterBits = [];
+    if (state.symbolFilter) filterBits.push(state.symbolFilter);
+    if (state.status) filterBits.push(state.status.toLowerCase());
+    var filterSuffix = filterBits.length ? '-' + filterBits.join('-') : '';
+    downloadCsv(
+      'ladder-entries-' + modeLabel + filterSuffix + '-' + stamp + '.csv',
+      headers,
+      rows.map(entryExportRow)
+    );
+    say('Exported ' + rows.length + ' entr' + (rows.length === 1 ? 'y' : 'ies') + '.', 'good');
   }
 
   var doSaveConfig = withBusy(async function () {
@@ -720,6 +810,10 @@
       state.page += 1;
       return reload();
     }));
+
+    if ($('btn-export-entries')) {
+      $('btn-export-entries').addEventListener('click', withBusy(exportAllEntries));
+    }
 
     loadSymbols();
   }

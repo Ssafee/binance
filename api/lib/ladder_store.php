@@ -888,13 +888,11 @@ function ladderDashboard(array $state, array|float $prices): array
 /**
  * @param array<string, mixed> $state
  * @param array<string, float>|float $prices
- * @return array{rows:list<array<string,mixed>>,page:int,perPage:int,total:int,pages:int}
+ * @return list<array<string, mixed>>
  */
-function ladderPaginate(
+function ladderFilterEntries(
     array $state,
     array|float $prices,
-    int $page = 1,
-    int $perPage = 10,
     string $status = '',
     string $symbolFilter = ''
 ): array {
@@ -923,6 +921,26 @@ function ladderPaginate(
     usort($rows, static function ($a, $b) {
         return ((int) $b['buyAt']) <=> ((int) $a['buyAt']);
     });
+
+    return $rows;
+}
+
+/**
+ * @param array<string, mixed> $state
+ * @param array<string, float>|float $prices
+ * @return array{rows:list<array<string,mixed>>,page:int,perPage:int,total:int,pages:int}
+ */
+function ladderPaginate(
+    array $state,
+    array|float $prices,
+    int $page = 1,
+    int $perPage = 10,
+    string $status = '',
+    string $symbolFilter = ''
+): array {
+    $status = strtoupper(trim($status));
+    $symbolFilter = strtoupper(trim($symbolFilter));
+    $rows = ladderFilterEntries($state, $prices, $status, $symbolFilter);
 
     $total = count($rows);
     $perPage = max(1, min(100, $perPage));

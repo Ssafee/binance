@@ -431,7 +431,14 @@ details.lad-panel[open] > summary {
 
 .lad-table-tools {
   display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0.75rem;
+}
+
+.lad-export-btn {
+  white-space: nowrap;
+  margin-bottom: 0.1rem;
 }
 
 .lad-table-wrap {
