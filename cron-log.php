@@ -101,9 +101,11 @@ function cronLogStatus(array $run): string
         <code>data/ladder_cron_log.json</code> (keeps the newest 30).
       </p>
       <nav class="lad-nav">
-        <a href="ladder.php">← Live ladder</a>
+        <a href="index.php">← Ladder (home)</a>
+        <a href="ladder.php">Ladder</a>
         <a href="simulate.php">Simulator</a>
-        <a href="index.php">Main dashboard</a>
+        <a href="calendar.php">Calendar</a>
+        <a href="watch.php">Watch dashboard</a>
         <?php if ($authed): ?>
           <a class="lad-nav-out" href="<?= htmlspecialchars($self, ENT_QUOTES) ?>?logout=1">Sign out</a>
         <?php endif; ?>

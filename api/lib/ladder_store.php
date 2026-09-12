@@ -466,6 +466,8 @@ function ladderConfigSyncBuyDay(array &$config): void
     if ((string) ($config['buyDay'] ?? '') !== $today) {
         $config['buyDay'] = $today;
         $config['buysToday'] = 0;
+        // New UTC day = fresh buy cycles. Older open lots still sell at target later.
+        $config['cycleEntryId'] = null;
     }
 }
 
@@ -487,7 +489,7 @@ function ladderConfigFindEntry(array $state, array $config, ?string $entryId = n
     return null;
 }
 
-/** Clear cycle lock when the tracked entry is gone or already sold. */
+/** Clear cycle lock when the tracked entry is gone, sold, or from a prior UTC day. */
 function ladderConfigRefreshCycle(array $state, array &$config): void
 {
     $entryId = (string) ($config['cycleEntryId'] ?? '');
@@ -497,15 +499,23 @@ function ladderConfigRefreshCycle(array $state, array &$config): void
     $entry = ladderConfigFindEntry($state, $config, $entryId);
     if ($entry === null || ($entry['status'] ?? '') === 'SOLD') {
         $config['cycleEntryId'] = null;
+        return;
+    }
+    if (!empty($config['multiBuyEnabled']) && (string) ($entry['buyDate'] ?? '') !== binanceTodayDate()) {
+        $config['cycleEntryId'] = null;
     }
 }
 
-/** True while the current multi-buy cycle entry is still open. */
+/**
+ * True while today's in-progress multi-buy cycle is still open.
+ * Open entries from previous UTC days do NOT block new daily cycles.
+ */
 function ladderConfigCycleBlocksBuy(array $state, array $config): bool
 {
     if (empty($config['multiBuyEnabled'])) {
         return false;
     }
+    $today = binanceTodayDate();
     $config = ladderSanitizeConfig($config);
     ladderConfigRefreshCycle($state, $config);
     $entryId = (string) ($config['cycleEntryId'] ?? '');
@@ -513,7 +523,10 @@ function ladderConfigCycleBlocksBuy(array $state, array $config): bool
         return false;
     }
     $entry = ladderConfigFindEntry($state, $config, $entryId);
-    return $entry !== null && ($entry['status'] ?? '') === 'OPEN';
+    if ($entry === null || ($entry['status'] ?? '') !== 'OPEN') {
+        return false;
+    }
+    return (string) ($entry['buyDate'] ?? '') === $today;
 }
 
 /**

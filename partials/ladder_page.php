@@ -10,8 +10,14 @@ require_once dirname(__DIR__) . '/api/lib/auth.php';
 
 $mode = ($LADDER_MODE ?? 'live') === 'sim' ? 'sim' : 'live';
 $isSim = $mode === 'sim';
-$self = $isSim ? 'simulate.php' : 'ladder.php';
-$other = $isSim ? 'ladder.php' : 'simulate.php';
+if ($isSim) {
+    $self = 'simulate.php';
+    $other = 'index.php';
+} else {
+    $script = basename((string) ($_SERVER['SCRIPT_NAME'] ?? 'index.php'));
+    $self = in_array($script, ['index.php', 'ladder.php'], true) ? $script : 'index.php';
+    $other = 'simulate.php';
+}
 $otherLabel = $isSim ? 'Go to live ladder' : 'Go to simulator';
 
 $loginError = null;
@@ -65,9 +71,10 @@ $authed = ladderIsAuthed();
         fees plus your target profit. Losing entries are never sold — they just wait.
       </p>
       <nav class="lad-nav">
-        <a href="index.php">← Main dashboard</a>
+        <a href="watch.php">Watch dashboard</a>
         <a href="<?= $other ?>"><?= $otherLabel ?></a>
         <a href="graph.php">Coin graph</a>
+        <a href="calendar.php">Calendar</a>
         <a href="cron-log.php">Cron log</a>
         <?php if ($authed): ?>
           <a class="lad-nav-out" href="<?= $self ?>?logout=1">Sign out</a>

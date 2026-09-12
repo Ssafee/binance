@@ -768,7 +768,7 @@ function ladderDailyBuyForConfig(
                 'ok' => true,
                 'skipped' => true,
                 'symbol' => $symbol,
-                'reason' => $symbol . ' waiting for current cycle to sell before next buy',
+                'reason' => $symbol . ' waiting for today\'s cycle to sell before next buy',
             ];
         }
 

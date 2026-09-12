@@ -36,9 +36,10 @@ if ($defaultDays > 90) {
       <h1>Daily price history</h1>
       <p>Pick a USDT pair and view the last month of daily candles from Binance (open, high, low, close, volume).</p>
       <nav class="graph-nav">
-        <a href="index.php">← Main dashboard</a>
-        <a href="ladder.php">Ladder</a>
+        <a href="index.php">← Ladder (home)</a>
+        <a href="watch.php">Watch dashboard</a>
         <a href="simulate.php">Simulator</a>
+        <a href="calendar.php">Calendar</a>
         <a href="cron-log.php">Cron log</a>
       </nav>
     </header>
