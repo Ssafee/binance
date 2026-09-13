@@ -80,6 +80,32 @@
     return d.toISOString().slice(0, 19).replace('T', ' ') + ' UTC';
   }
 
+  function rowBuyDate(row) {
+    if (row && row.buyDate) return String(row.buyDate).slice(0, 10);
+    if (row && row.buyAt) return new Date(num(row.buyAt)).toISOString().slice(0, 10);
+    return '';
+  }
+
+  function symbolStyleClass(symbol) {
+    var s = String(symbol || '').toUpperCase();
+    var known = {
+      ETHUSDT: 'lad-sym-eth',
+      SOLUSDT: 'lad-sym-sol',
+      BTCUSDT: 'lad-sym-btc',
+      BNBUSDT: 'lad-sym-bnb',
+      XRPUSDT: 'lad-sym-xrp',
+      ADAUSDT: 'lad-sym-ada',
+      DOGEUSDT: 'lad-sym-doge',
+      AVAXUSDT: 'lad-sym-avax',
+      LINKUSDT: 'lad-sym-link',
+      MATICUSDT: 'lad-sym-matic'
+    };
+    if (known[s]) return known[s];
+    var hash = 0;
+    for (var i = 0; i < s.length; i++) hash = ((hash << 5) - hash + s.charCodeAt(i)) | 0;
+    return 'lad-sym-alt-' + (Math.abs(hash) % 6);
+  }
+
   function say(message, kind) {
     var el = $('lad-status');
     if (!el) return;
@@ -393,11 +419,17 @@
       return;
     }
 
-    tbody.innerHTML = rows.map(function (row) {
+    tbody.innerHTML = rows.map(function (row, i) {
       var isSold = row.status === 'SOLD';
       var matured = !!row.matured;
       var price = priceFor(row.symbol);
-      var cls = isSold ? 'is-sold' : (matured ? 'is-matured' : '');
+      var symCls = symbolStyleClass(row.symbol);
+      var dateStart = i > 0 && rowBuyDate(row) !== rowBuyDate(rows[i - 1]);
+      var clsParts = [symCls];
+      if (dateStart) clsParts.push('lad-date-start');
+      if (isSold) clsParts.push('is-sold');
+      else if (matured) clsParts.push('is-matured');
+      var cls = clsParts.join(' ');
       var leftover = !isSold && String(row.note || '').indexOf('Remainder') >= 0;
       var pill = isSold
         ? '<span class="lad-pill lad-pill-sold">SOLD</span>'
@@ -428,8 +460,9 @@
           '" data-sell="' + esc(row.id) + '">' + (matured ? 'Sell now' : 'Sell') + '</button>' +
           (IS_SIM ? ' <button type="button" class="lad-row-btn lad-row-btn-del" data-del="' + esc(row.id) + '">✕</button>' : '');
 
-      var boughtCell = '<strong>' + esc(fmtDateTimeUtc(row.buyAt)) + '</strong><br><small>' + esc(row.symbol) +
-        (leftover ? ' · leftover' : '') + '</small>';
+      var boughtCell = '<strong>' + esc(fmtDateTimeUtc(row.buyAt)) + '</strong><br>' +
+        '<span class="lad-sym-tag ' + symCls + '">' + esc(row.symbol) + '</span>' +
+        (leftover ? ' <small>· leftover</small>' : '');
       if (isSold && row.sellAt) {
         boughtCell += '<br><small>Sold ' + esc(fmtDateTimeUtc(row.sellAt)) + '</small>';
       }

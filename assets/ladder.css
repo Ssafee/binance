@@ -489,6 +489,50 @@ details.lad-panel[open] > summary {
   color: var(--muted);
 }
 
+.lad-table tbody tr[class*="lad-sym-"] td:first-child {
+  box-shadow: inset 4px 0 0 var(--sym-edge, transparent);
+}
+
+.lad-table tbody tr.lad-sym-eth { --sym-bg: rgba(98, 126, 234, 0.07); --sym-edge: #627eea; }
+.lad-table tbody tr.lad-sym-sol { --sym-bg: rgba(20, 200, 160, 0.08); --sym-edge: #0f9b7a; }
+.lad-table tbody tr.lad-sym-btc { --sym-bg: rgba(247, 147, 26, 0.08); --sym-edge: #f7931a; }
+.lad-table tbody tr.lad-sym-bnb { --sym-bg: rgba(243, 186, 47, 0.1); --sym-edge: #c99400; }
+.lad-table tbody tr.lad-sym-xrp { --sym-bg: rgba(35, 41, 47, 0.06); --sym-edge: #23292f; }
+.lad-table tbody tr.lad-sym-ada { --sym-bg: rgba(0, 51, 173, 0.07); --sym-edge: #0033ad; }
+.lad-table tbody tr.lad-sym-doge { --sym-bg: rgba(195, 166, 0, 0.1); --sym-edge: #c3a600; }
+.lad-table tbody tr.lad-sym-avax { --sym-bg: rgba(232, 65, 66, 0.07); --sym-edge: #e84142; }
+.lad-table tbody tr.lad-sym-link { --sym-bg: rgba(45, 82, 255, 0.07); --sym-edge: #2d52ff; }
+.lad-table tbody tr.lad-sym-matic { --sym-bg: rgba(130, 71, 229, 0.08); --sym-edge: #8247e5; }
+.lad-table tbody tr.lad-sym-alt-0 { --sym-bg: rgba(219, 39, 119, 0.07); --sym-edge: #db2777; }
+.lad-table tbody tr.lad-sym-alt-1 { --sym-bg: rgba(14, 165, 233, 0.08); --sym-edge: #0ea5e9; }
+.lad-table tbody tr.lad-sym-alt-2 { --sym-bg: rgba(168, 85, 247, 0.08); --sym-edge: #a855f7; }
+.lad-table tbody tr.lad-sym-alt-3 { --sym-bg: rgba(234, 88, 12, 0.08); --sym-edge: #ea580c; }
+.lad-table tbody tr.lad-sym-alt-4 { --sym-bg: rgba(5, 150, 105, 0.08); --sym-edge: #059669; }
+.lad-table tbody tr.lad-sym-alt-5 { --sym-bg: rgba(79, 70, 229, 0.08); --sym-edge: #4f46e5; }
+
+.lad-table tbody tr[class*="lad-sym-"]:not(.is-matured):not(.is-sold) {
+  background: var(--sym-bg);
+}
+
+.lad-table tbody tr.lad-date-start td {
+  border-top: 3px solid rgba(15, 23, 42, 0.35);
+}
+
+.lad-sym-tag {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  background: var(--sym-bg, rgba(15, 23, 42, 0.06));
+  color: var(--sym-edge, var(--text));
+  border: 1px solid rgba(15, 23, 42, 0.12);
+}
+
 .lad-col-act { text-align: right; }
 
 .lad-empty {
